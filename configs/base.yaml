@@ -46,7 +46,9 @@ generation:
 sources:
   attack_cti:
     enabled: true
-    url: https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json
+    # mitre-attack/attack-stix-data is MITRE's canonical distribution; the older
+    # mitre/cti mirror lags it and carries a smaller bundle.
+    url: https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json
     include_revoked: false
     include_deprecated: false
   nvd_cve:
