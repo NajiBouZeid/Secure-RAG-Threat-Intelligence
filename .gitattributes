@@ -1,0 +1,5 @@
+# Normalise to LF in the repo so Windows checkouts do not produce spurious
+# diffs and `ruff format --check` in CI sees the same bytes as local runs.
+* text=auto eol=lf
+*.png binary
+*.pdf binary

@@ -1,0 +1,30 @@
+# Data & models (fetched by scripts, never committed)
+data/
+!data/.gitkeep
+models/
+*.pdf
+reports/**/*.png
+reports/**/*.csv
+reports/**/*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local infra state
+qdrant_storage/
+.env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
