@@ -56,7 +56,12 @@ class SentenceTransformerEmbedder:
             from sentence_transformers import SentenceTransformer
 
             model = SentenceTransformer(self._model_id, device=self._device)
-            reported = model.get_sentence_embedding_dimension()
+            # Renamed in sentence-transformers 6; the old name still works but
+            # warns. Prefer the new one and fall back for older installs.
+            probe = getattr(model, "get_embedding_dimension", None) or (
+                model.get_sentence_embedding_dimension
+            )
+            reported = probe()
             if reported != self._dim:
                 raise ValueError(
                     f"Config declares dim={self._dim} for {self._model_id!r} but the model "

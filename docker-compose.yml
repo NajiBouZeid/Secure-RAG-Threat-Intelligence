@@ -3,7 +3,9 @@
 # reaches it via host.docker.internal.
 services:
   qdrant:
-    image: qdrant/qdrant:v1.12.4
+    # Kept in step with the qdrant-client pin in pyproject.toml: the client
+    # refuses a major mismatch and warns beyond one minor.
+    image: qdrant/qdrant:v1.19.0
     container_name: threatrag-qdrant
     ports:
       - "6333:6333"
