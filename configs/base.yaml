@@ -1,0 +1,57 @@
+# Single source of truth for a run. Experiment configs under configs/experiments/
+# deep-merge over this file, so a benchmark cell only states what it changes.
+
+paths:
+  data_dir: data
+  reports_dir: reports
+
+embedding:
+  # MiniLM is the workhorse. GTR is indexed alongside it under a second named
+  # vector because it is the only strong model with a public vec2text corrector,
+  # which is what makes the Phase 2 inversion attack honest rather than hand-waved.
+  primary: all-minilm
+  models:
+    all-minilm:
+      backend: sentence_transformers
+      model_id: sentence-transformers/all-MiniLM-L6-v2
+      dim: 384
+      normalize: true
+    gtr-base:
+      backend: sentence_transformers
+      model_id: sentence-transformers/gtr-t5-base
+      dim: 768
+      normalize: true
+
+chunking:
+  strategy: structural       # structural | recursive | fixed
+  chunk_size: 512
+  chunk_overlap: 64
+
+vector_store:
+  backend: qdrant
+  url: http://localhost:6333
+  collection: threatrag
+
+retrieval:
+  top_k: 5
+  score_threshold: null
+
+generation:
+  backend: ollama
+  url: http://localhost:11434
+  model: qwen2.5:7b-instruct
+  temperature: 0.0
+  num_ctx: 8192
+
+sources:
+  attack_cti:
+    enabled: true
+    url: https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json
+    include_revoked: false
+    include_deprecated: false
+  nvd_cve:
+    enabled: false
+  vendor_report:
+    enabled: false
+
+defenses: []                 # names of enabled defences; empty = undefended baseline

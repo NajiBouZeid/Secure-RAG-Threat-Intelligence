@@ -1,0 +1,6 @@
+# Benchmark cell: naive fixed-width chunking baseline.
+# Only the deltas are stated; everything else deep-merges from base.yaml.
+chunking:
+  strategy: fixed
+vector_store:
+  collection: threatrag_chunk_fixed

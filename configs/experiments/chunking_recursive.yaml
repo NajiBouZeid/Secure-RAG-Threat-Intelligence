@@ -1,0 +1,5 @@
+# Benchmark cell: separator-aware recursive chunking.
+chunking:
+  strategy: recursive
+vector_store:
+  collection: threatrag_chunk_recursive
