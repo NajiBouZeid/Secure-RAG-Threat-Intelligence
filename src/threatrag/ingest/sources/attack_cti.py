@@ -61,6 +61,18 @@ def _as_str_list(value: Any) -> list[str]:
     return [str(item) for item in value] if isinstance(value, list) else []
 
 
+def _log_sources(analytic: dict[str, Any]) -> list[str]:
+    """Channels an analytic reads, e.g. ``WinEventLog:Security (EventCode=4624)``."""
+    out: list[str] = []
+    for ref in analytic.get("x_mitre_log_source_references", []):
+        name = str(ref.get("name", "")).strip()
+        if not name:
+            continue
+        channel = str(ref.get("channel", "")).strip()
+        out.append(f"{name} ({channel})" if channel else name)
+    return out
+
+
 class AttackCtiSource:
     """Normalises the ATT&CK Enterprise bundle into :class:`Document` objects."""
 
@@ -103,12 +115,59 @@ class AttackCtiSource:
             return False
         return _external_id(obj) is not None
 
-    def load(self) -> Iterable[Document]:
-        for obj in self._bundle():
-            if self._keep(obj):
-                yield self._to_document(obj)
+    def _render_strategy(self, strategy: dict[str, Any], by_stix: dict[str, dict[str, Any]]) -> str:
+        lines: list[str] = [f"### {strategy.get('name', 'Detection strategy')}"]
+        for ref in _as_str_list(strategy.get("x_mitre_analytic_refs")):
+            analytic = by_stix.get(ref)
+            if analytic is None:
+                continue
+            if analytic.get("x_mitre_deprecated") and not self._include_deprecated:
+                continue
+            description = str(analytic.get("description", "")).strip()
+            if description:
+                lines.append(description)
+            sources = _log_sources(analytic)
+            if sources:
+                lines.append("Log sources: " + "; ".join(sources))
+        return "\n".join(lines) + "\n" if len(lines) > 1 else ""
 
-    def _to_document(self, obj: dict[str, Any]) -> Document:
+    def _detection_index(self, objects: list[dict[str, Any]]) -> dict[str, str]:
+        """Map technique STIX id -> rendered detection guidance.
+
+        ATT&CK v18 moved detection off the technique: the ``x_mitre_detection``
+        string is gone and the guidance now lives in standalone
+        ``x-mitre-detection-strategy`` objects that point back through a
+        ``detects`` relationship, each fanning out to analytics that carry the
+        concrete log sources. Rebuilding the section from that join is what keeps
+        the Detection block populated -- without it every technique in a current
+        bundle indexes with its description alone, the structural chunker loses
+        one of its three sections, and detection-shaped queries retrieve nothing.
+        """
+        by_stix = {obj["id"]: obj for obj in objects if "id" in obj}
+        blocks: dict[str, list[str]] = {}
+        for rel in objects:
+            if rel.get("type") != "relationship" or rel.get("relationship_type") != "detects":
+                continue
+            strategy = by_stix.get(str(rel.get("source_ref", "")))
+            if strategy is None or strategy.get("type") != "x-mitre-detection-strategy":
+                continue
+            if strategy.get("revoked") and not self._include_revoked:
+                continue
+            if strategy.get("x_mitre_deprecated") and not self._include_deprecated:
+                continue
+            rendered = self._render_strategy(strategy, by_stix)
+            if rendered:
+                blocks.setdefault(str(rel.get("target_ref", "")), []).append(rendered)
+        return {key: "\n".join(value) for key, value in blocks.items()}
+
+    def load(self) -> Iterable[Document]:
+        objects = self._bundle()
+        detection = self._detection_index(objects)
+        for obj in objects:
+            if self._keep(obj):
+                yield self._to_document(obj, detection.get(str(obj.get("id", "")), ""))
+
+    def _to_document(self, obj: dict[str, Any], detection: str = "") -> Document:
         kind = STIX_KINDS[obj["type"]]
         attack_id = _external_id(obj) or str(obj["id"])
         name = str(obj.get("name", attack_id))
@@ -119,7 +178,8 @@ class AttackCtiSource:
         body = "".join(
             (
                 section("Description", obj.get("description")),
-                section("Detection", obj.get("x_mitre_detection")),
+                # Older bundles still carry the inline string; prefer it when present.
+                section("Detection", str(obj.get("x_mitre_detection") or "") or detection),
                 section("Tactics", ", ".join(tactics)),
                 section("Platforms", ", ".join(platforms)),
                 section("Aliases", ", ".join(aliases)),
