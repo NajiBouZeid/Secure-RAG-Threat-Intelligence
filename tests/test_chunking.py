@@ -77,3 +77,34 @@ def test_chunk_ids_are_content_addressed() -> None:
     edited = make_document(SECTIONED.replace("evade defences", "evade EDR"))
     changed = build_chunker("structural", 512, 64).split(edited)
     assert changed[0].id != first[0].id
+
+
+# A short heading followed by one oversized unit: _pack emits the heading alone
+# and then carries it back as overlap, so its second piece reconstitutes the
+# whole input. Re-splitting that on the same separator recurses forever, which
+# is what a third of the real ATT&CK corpus used to do.
+PATHOLOGICAL = "## Description\n" + "Code signing verifies software authenticity. " * 60
+
+
+def test_recursive_split_terminates_on_a_heading_plus_one_long_line() -> None:
+    import sys
+
+    original = sys.getrecursionlimit()
+    sys.setrecursionlimit(100)  # a correct splitter needs depth ~5
+    try:
+        chunks = build_chunker("recursive", 512, 64).split(make_document(PATHOLOGICAL))
+    finally:
+        sys.setrecursionlimit(original)
+
+    assert chunks
+    assert all(len(chunk.text) <= 512 for chunk in chunks)
+
+
+@pytest.mark.parametrize("strategy", ["structural", "recursive", "fixed"])
+def test_no_strategy_loses_the_body_text(strategy: str) -> None:
+    """Splitting may duplicate across the overlap, but must never drop content."""
+    chunks = build_chunker(strategy, 512, 64).split(make_document(PATHOLOGICAL))
+    joined = " ".join(chunk.text for chunk in chunks)
+
+    assert "Code signing verifies software authenticity." in joined
+    assert joined.count("Code signing verifies software authenticity.") >= 60

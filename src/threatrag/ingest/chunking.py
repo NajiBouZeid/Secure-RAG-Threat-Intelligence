@@ -153,25 +153,35 @@ class FixedChunker:
         return _build(document, pieces)
 
 
-def _split_recursive(text: str, chunk_size: int, overlap: int) -> list[str]:
+def _split_recursive(
+    text: str, chunk_size: int, overlap: int, from_separator: int = 0
+) -> list[str]:
+    """Split ``text`` using separators from ``from_separator`` onwards.
+
+    ``from_separator`` is what makes this terminate. Recursing on an oversized
+    piece must continue with a *finer* separator than the one that produced it,
+    never restart at the coarsest: the overlap carry in :func:`_pack` can emit a
+    trailing piece as long as its own input (a short heading followed by one
+    oversized unit reconstitutes the original), and re-splitting that on the
+    same separator yields the same piece forever. Advancing the index bounds the
+    depth by the number of separators, after which the hard slice below always
+    makes progress.
+    """
     text = text.strip()
     if len(text) <= chunk_size:
         return [text] if text else []
 
-    for separator in _RECURSIVE_SEPARATORS:
+    for index in range(from_separator, len(_RECURSIVE_SEPARATORS)):
+        separator = _RECURSIVE_SEPARATORS[index]
         units = [unit for unit in text.split(separator) if unit.strip()]
         if len(units) < 2:
             continue
-        packed = _pack(units, separator, chunk_size, overlap)
-        if all(len(piece) <= chunk_size for piece in packed):
-            return packed
-        # Separator helped but left oversized pieces: recurse into just those.
         result: list[str] = []
-        for piece in packed:
+        for piece in _pack(units, separator, chunk_size, overlap):
             result.extend(
                 [piece]
                 if len(piece) <= chunk_size
-                else _split_recursive(piece, chunk_size, overlap)
+                else _split_recursive(piece, chunk_size, overlap, index + 1)
             )
         return result
 
