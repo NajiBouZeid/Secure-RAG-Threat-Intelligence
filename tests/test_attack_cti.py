@@ -113,3 +113,62 @@ def test_a_strategy_with_no_usable_analytic_adds_no_empty_section(tmp_path: Path
     (document,) = make_source(tmp_path, bundle).load()
 
     assert "## Detection" not in document.text
+
+
+def test_procedure_examples_are_folded_into_the_technique(tmp_path: Path) -> None:
+    """The uses edge is the only record of which group uses which technique.
+
+    Left in the relationship graph it is unretrievable, and the gold set scores
+    chance because no indexed document contains the evidence.
+    """
+    bundle = json.loads(json.dumps(BUNDLE))
+    bundle["objects"] += [
+        {
+            "id": "intrusion-set--0001",
+            "type": "intrusion-set",
+            "name": "Ke3chang",
+            "description": "A threat group.",
+            "external_references": [attack_ref("G0004")],
+        },
+        {
+            "id": "relationship--0002",
+            "type": "relationship",
+            "relationship_type": "uses",
+            "source_ref": "intrusion-set--0001",
+            "target_ref": TECHNIQUE_STIX_ID,
+            "description": "Ke3chang has injected into explorer.exe.",
+        },
+    ]
+
+    documents = {d.source_ref: d for d in make_source(tmp_path, bundle).load()}
+
+    technique = documents["T1055"].text
+    assert "## Procedure Examples" in technique
+    assert "Ke3chang (G0004)" in technique
+    assert "Ke3chang has injected into explorer.exe." in technique
+    # The group keeps its own entry, and gains no procedure section of its own.
+    assert "## Procedure Examples" not in documents["G0004"].text
+
+
+def test_a_uses_edge_without_a_description_is_skipped(tmp_path: Path) -> None:
+    bundle = json.loads(json.dumps(BUNDLE))
+    bundle["objects"] += [
+        {
+            "id": "intrusion-set--0002",
+            "type": "intrusion-set",
+            "name": "Silent Group",
+            "external_references": [attack_ref("G0009")],
+        },
+        {
+            "id": "relationship--0003",
+            "type": "relationship",
+            "relationship_type": "uses",
+            "source_ref": "intrusion-set--0002",
+            "target_ref": TECHNIQUE_STIX_ID,
+            "description": "   ",
+        },
+    ]
+
+    documents = {d.source_ref: d for d in make_source(tmp_path, bundle).load()}
+
+    assert "## Procedure Examples" not in documents["T1055"].text

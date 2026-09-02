@@ -34,6 +34,12 @@ STIX_KINDS: dict[str, str] = {
 }
 
 
+# Actors whose ``uses`` edges become a technique's procedure examples. Campaigns
+# are included even though they are not indexed as documents of their own: the
+# procedure text is what matters, not the campaign entry.
+PROCEDURE_ACTORS = frozenset({"intrusion-set", "malware", "tool", "campaign"})
+
+
 def _external_id(obj: dict[str, Any]) -> str | None:
     for ref in obj.get("external_references", []):
         if ref.get("source_name") == ATTACK_SOURCE_NAME and ref.get("external_id"):
@@ -160,14 +166,59 @@ class AttackCtiSource:
                 blocks.setdefault(str(rel.get("target_ref", "")), []).append(rendered)
         return {key: "\n".join(value) for key, value in blocks.items()}
 
+    def _procedure_index(self, objects: list[dict[str, Any]]) -> dict[str, str]:
+        """Map technique STIX id -> the procedure examples ATT&CK lists for it.
+
+        Without this the corpus cannot answer the question the gold set asks.
+        Which techniques a group uses is recorded only as a STIX ``uses`` edge;
+        the group document is a description and a list of aliases and names not
+        one technique. Measured against a corpus that omits these edges, only 5
+        of 941 gold (group, technique) pairs had their evidence indexed at all,
+        so Recall@k scored chance no matter how good the retriever was.
+
+        Every ``uses`` edge carries a written description naming the actor --
+        the same text ATT&CK renders as "Procedure Examples" on a technique
+        page -- so folding it into the technique document restores the evidence
+        without inventing anything or weakening MITRE's curated labels.
+        """
+        by_stix = {obj["id"]: obj for obj in objects if "id" in obj}
+        entries: dict[str, list[str]] = {}
+        for rel in objects:
+            if rel.get("type") != "relationship" or rel.get("relationship_type") != "uses":
+                continue
+            description = str(rel.get("description", "")).strip()
+            if not description:
+                continue
+            actor = by_stix.get(str(rel.get("source_ref", "")))
+            target = by_stix.get(str(rel.get("target_ref", "")))
+            if actor is None or target is None or target.get("type") != "attack-pattern":
+                continue
+            if actor.get("type") not in PROCEDURE_ACTORS:
+                continue
+            if actor.get("revoked") and not self._include_revoked:
+                continue
+            if actor.get("x_mitre_deprecated") and not self._include_deprecated:
+                continue
+            actor_id = _external_id(actor)
+            actor_name = str(actor.get("name", actor_id or "Unknown"))
+            label = f"{actor_name} ({actor_id})" if actor_id else actor_name
+            entries.setdefault(str(rel["target_ref"]), []).append(f"- {label}: {description}")
+        return {key: "\n".join(value) for key, value in entries.items()}
+
     def load(self) -> Iterable[Document]:
         objects = self._bundle()
         detection = self._detection_index(objects)
+        procedures = self._procedure_index(objects)
         for obj in objects:
             if self._keep(obj):
-                yield self._to_document(obj, detection.get(str(obj.get("id", "")), ""))
+                stix_id = str(obj.get("id", ""))
+                yield self._to_document(
+                    obj, detection.get(stix_id, ""), procedures.get(stix_id, "")
+                )
 
-    def _to_document(self, obj: dict[str, Any], detection: str = "") -> Document:
+    def _to_document(
+        self, obj: dict[str, Any], detection: str = "", procedures: str = ""
+    ) -> Document:
         kind = STIX_KINDS[obj["type"]]
         attack_id = _external_id(obj) or str(obj["id"])
         name = str(obj.get("name", attack_id))
@@ -183,6 +234,8 @@ class AttackCtiSource:
                 section("Tactics", ", ".join(tactics)),
                 section("Platforms", ", ".join(platforms)),
                 section("Aliases", ", ".join(aliases)),
+                # Last: it is the longest section and the least useful in isolation.
+                section("Procedure Examples", procedures),
             )
         )
 
