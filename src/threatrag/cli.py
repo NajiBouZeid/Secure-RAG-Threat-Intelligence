@@ -57,11 +57,23 @@ def ingest(
     config: ConfigOption = None,
     overlay: OverlayOption = None,
     embedder: Annotated[str | None, typer.Option("--embedder", help="Embedding model key.")] = None,
+    reset: Annotated[
+        bool,
+        typer.Option("--reset", help="Drop this corpus from the collection before indexing."),
+    ] = False,
 ) -> None:
     """Parse, chunk, embed and index the enabled corpora."""
     cfg = _config(config, overlay)
     source = factory.build_attack_source(cfg)
     pipeline = factory.build_pipeline(cfg, embedder)
+
+    # Chunk ids are content-addressed, so re-ingesting with a different chunker
+    # writes new points rather than replacing the old ones: without --reset the
+    # collection would quietly hold two strategies at once and every metric
+    # measured against it would be meaningless.
+    if reset:
+        removed = factory.build_store(cfg).delete_by_source_type(source.name)
+        console.print(f"[yellow]reset[/] removed {removed} existing {source.name} chunks")
 
     console.print(f"Ingesting [bold]{source.name}[/] with chunker={cfg.chunking.strategy}")
     stats = pipeline.run(source.load())
