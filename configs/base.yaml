@@ -46,6 +46,23 @@ generation:
   num_ctx: 8192
   max_context_chars: 12000
 
+principals:
+  # Demo identities for the API and UI. A lab affordance, not authentication:
+  # the caller names one and the server believes it. The threat model here is
+  # what retrieval returns for a given clearance, not how identity is proven.
+  analyst:
+    label: "Analyst (TLP:CLEAR)"
+    role: analyst
+    clearance: clear
+  senior_analyst:
+    label: "Senior analyst (TLP:AMBER)"
+    role: senior_analyst
+    clearance: amber
+  ir_lead:
+    label: "IR lead (TLP:RED)"
+    role: ir_lead
+    clearance: red
+
 sources:
   attack_cti:
     enabled: true

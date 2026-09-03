@@ -83,6 +83,17 @@ class AnswerPipeline:
         self._max_context_chars = max_context_chars
         self._system_prompt = system_prompt
 
+    def retrieve(
+        self,
+        question: str,
+        *,
+        principal: Principal | None = None,
+        k: int | None = None,
+    ) -> list[RetrievedChunk]:
+        """Retrieval without generation, so a retrieval failure and a
+        generation failure can be told apart from the outside."""
+        return self._retriever.retrieve(question, k=k, principal=principal)
+
     def answer(
         self,
         question: str,

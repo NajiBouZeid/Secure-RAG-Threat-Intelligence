@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Threat Intelligence Assistant</title>
+<style>
+  :root {
+    --bg: #0f1418; --panel: #161d23; --line: #24303a; --ink: #e6edf3;
+    --muted: #8b9aa7; --accent: #4c9aff; --warn: #f0a45d; --danger: #e5534b;
+    --clear: #4a7c59; --green: #3f7d52; --amber: #9a6a24; --red: #8c3b36;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    padding: 14px 20px; border-bottom: 1px solid var(--line);
+    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  }
+  h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  .lab { font-size: 12px; color: var(--muted); }
+  main { max-width: 900px; margin: 0 auto; padding: 20px; }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  select, input, textarea, button {
+    font: inherit; color: var(--ink); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px;
+  }
+  textarea { width: 100%; min-height: 78px; resize: vertical; }
+  button {
+    background: var(--accent); border-color: var(--accent); color: #08121f;
+    font-weight: 600; cursor: pointer;
+  }
+  button:disabled { opacity: .55; cursor: default; }
+  .row { display: flex; gap: 12px; align-items: flex-end; margin-top: 12px; flex-wrap: wrap; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; padding: 16px; margin-top: 18px;
+  }
+  .card h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .6px;
+    color: var(--muted); margin: 0 0 10px;
+  }
+  .answer p { margin: 0 0 10px; }
+  .answer code { background: #0b1015; padding: 1px 5px; border-radius: 4px; }
+  .answer img { max-width: 100%; border-radius: 6px; }
+  .cite { font-size: 13px; color: var(--muted); margin: 4px 0; }
+  .hit { border-top: 1px solid var(--line); padding: 10px 0; font-size: 13px; }
+  .hit:first-of-type { border-top: 0; }
+  .hit .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .hit .body { color: var(--muted); margin-top: 6px; white-space: pre-wrap; }
+  .badge {
+    font-size: 11px; padding: 1px 7px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: .4px;
+  }
+  .tlp-clear { background: var(--clear); } .tlp-green { background: var(--green); }
+  .tlp-amber { background: var(--amber); } .tlp-red { background: var(--red); }
+  .score { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .warn { color: var(--warn); font-size: 13px; margin-top: 10px; }
+  .error { color: var(--danger); }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Threat Intelligence Assistant</h1>
+  <span class="lab">lab build &mdash; principal is chosen, not authenticated</span>
+</header>
+
+<main>
+  <div class="row">
+    <div>
+      <label for="principal">Identity</label>
+      <select id="principal"></select>
+    </div>
+    <div>
+      <label for="k">Passages</label>
+      <input id="k" type="number" value="5" min="1" max="20" style="width: 78px">
+    </div>
+  </div>
+
+  <div style="margin-top: 12px">
+    <label for="q">Question</label>
+    <textarea id="q" placeholder="What tuning thresholds does detection rule DR-0412 use?"></textarea>
+  </div>
+
+  <div class="row">
+    <button id="ask">Ask</button>
+    <button id="search" style="background: transparent; color: var(--ink); border-color: var(--line)">
+      Retrieve only
+    </button>
+    <span id="status" class="muted"></span>
+  </div>
+
+  <div id="out"></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const out = $("out");
+
+const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => (
+  { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+));
+
+// Model output is escaped as HTML, then a small markdown subset is rendered --
+// which is what a real assistant UI does, and is exactly the surface M4's
+// rendering-based exfiltration attack targets: an image whose URL carries data
+// off the page. Left intact deliberately. The M6 defence turns it off.
+function renderMarkdown(text) {
+  let html = escapeHtml(text);
+  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img alt="$1" src="$2">');
+  html = html.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" rel="noreferrer">$1</a>');
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  return html.split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+}
+
+function renderHits(hits) {
+  if (!hits.length) return '<p class="muted">Nothing retrieved at this clearance.</p>';
+  return hits.map((h, i) => {
+    const c = h.chunk;
+    return `<div class="hit">
+      <div class="meta">
+        <span class="score">[${i + 1}] ${h.score.toFixed(3)}</span>
+        <span class="badge tlp-${c.tlp}">TLP:${c.tlp}</span>
+        <strong>${escapeHtml(c.source_ref)}</strong>
+        <span class="muted">${escapeHtml(c.title)}</span>
+      </div>
+      <div class="body">${escapeHtml(c.text.slice(0, 320))}${c.text.length > 320 ? "…" : ""}</div>
+    </div>`;
+  }).join("");
+}
+
+async function post(path, body) {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Principal-Id": $("principal").value },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+  return res.json();
+}
+
+function busy(on, message) {
+  $("ask").disabled = on;
+  $("search").disabled = on;
+  $("status").textContent = message || "";
+}
+
+async function ask() {
+  const question = $("q").value.trim();
+  if (!question) return;
+  busy(true, "retrieving and generating…");
+  out.innerHTML = "";
+  try {
+    const a = await post("/api/ask", { question, k: Number($("k").value) });
+    let html = `<div class="card"><h2>Answer &mdash; ${escapeHtml(a.model)}</h2>
+      <div class="answer">${renderMarkdown(a.text)}</div>`;
+    if (a.citations.length) {
+      html += a.citations.map((c, i) => `<div class="cite">[${i + 1}] ${escapeHtml(c)}</div>`).join("");
+    }
+    if (a.unsupported_citations.length) {
+      html += `<div class="warn">Unsupported citations: ${a.unsupported_citations.join(", ")}
+        &mdash; the model referenced passages that were never retrieved.</div>`;
+    }
+    html += `</div><div class="card"><h2>Retrieved context</h2>${renderHits(a.retrieved)}</div>`;
+    out.innerHTML = html;
+  } catch (e) {
+    out.innerHTML = `<div class="card error">${escapeHtml(e.message)}</div>`;
+  } finally {
+    busy(false);
+  }
+}
+
+async function searchOnly() {
+  const question = $("q").value.trim();
+  if (!question) return;
+  busy(true, "retrieving…");
+  out.innerHTML = "";
+  try {
+    const hits = await post("/api/search", { question, k: Number($("k").value) });
+    out.innerHTML = `<div class="card"><h2>Retrieved context</h2>${renderHits(hits)}</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="card error">${escapeHtml(e.message)}</div>`;
+  } finally {
+    busy(false);
+  }
+}
+
+$("ask").addEventListener("click", ask);
+$("search").addEventListener("click", searchOnly);
+$("q").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) ask();
+});
+
+fetch("/api/principals").then((r) => r.json()).then((list) => {
+  $("principal").innerHTML = list
+    .map((p) => `<option value="${p.id}">${escapeHtml(p.label)}</option>`)
+    .join("");
+});
+</script>
+</body>
+</html>

@@ -16,6 +16,8 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field
 
+from threatrag.domain.models import TLP
+
 DEFAULT_CONFIG = Path("configs/base.yaml")
 
 
@@ -65,6 +67,21 @@ class GenerationConfig(BaseModel):
     max_context_chars: int = 12000
 
 
+class PrincipalConfig(BaseModel):
+    """A demo identity for the API and UI.
+
+    Not authentication. The caller names the principal it wants and the server
+    believes it, which is fine for a lab whose threat model is retrieval-layer
+    access control rather than identity. A deployment would resolve these from
+    a real identity provider; nothing else about the access-control path would
+    change, because the Principal is already the only thing the store filters on.
+    """
+
+    label: str
+    role: str = "analyst"
+    clearance: TLP = TLP.CLEAR
+
+
 class PathsConfig(BaseModel):
     data_dir: Path = Path("data")
     reports_dir: Path = Path("reports")
@@ -85,6 +102,7 @@ class Config(BaseModel):
     vector_store: VectorStoreConfig = Field(default_factory=VectorStoreConfig)
     retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
     generation: GenerationConfig = Field(default_factory=GenerationConfig)
+    principals: dict[str, PrincipalConfig] = Field(default_factory=dict)
     sources: dict[str, dict[str, Any]] = Field(default_factory=dict)
     defenses: list[str] = Field(default_factory=list)
 
