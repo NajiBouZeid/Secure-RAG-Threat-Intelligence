@@ -19,6 +19,30 @@ from pydantic import BaseModel, Field
 from threatrag.domain.models import TLP
 
 DEFAULT_CONFIG = Path("configs/base.yaml")
+DEFAULT_ENV_FILE = Path(".env")
+
+
+def load_dotenv(path: Path = DEFAULT_ENV_FILE) -> None:
+    """Populate ``os.environ`` from a ``.env`` file, without overriding real env vars.
+
+    Secrets -- currently just the NVD API key -- are read from the environment
+    rather than from the YAML config, because the YAML is committed and the key
+    must not be. A real environment variable always wins, so a container or CI
+    runner can set the key without a file existing at all.
+    """
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        key, _, value = stripped.partition("=")
+        key = key.strip()
+        # Deliberately setdefault: an explicit environment variable outranks the
+        # file, and an empty placeholder in .env must not blank out a real value.
+        value = value.strip().strip('"').strip("'")
+        if key and value:
+            os.environ.setdefault(key, value)
 
 
 class EmbeddingModelConfig(BaseModel):
@@ -139,6 +163,7 @@ def _apply_env_overrides(raw: dict[str, Any]) -> dict[str, Any]:
 
 def load_config(path: str | Path | None = None, overlay: str | Path | None = None) -> Config:
     """Load ``base.yaml`` (or ``path``), optionally deep-merging an experiment overlay."""
+    load_dotenv()
     base_path = Path(path or os.getenv("THREATRAG_CONFIG") or DEFAULT_CONFIG)
     if not base_path.exists():
         raise FileNotFoundError(f"Config not found: {base_path}")

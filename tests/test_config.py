@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
 import yaml
 
-from threatrag.config import load_config
+from threatrag.config import load_config, load_dotenv
 
 BASE = Path("configs/base.yaml")
 
@@ -41,3 +42,29 @@ def test_unknown_embedding_model_fails_loudly() -> None:
 def test_missing_config_file_raises() -> None:
     with pytest.raises(FileNotFoundError):
         load_config(Path("configs/nope.yaml"))
+
+
+def test_dotenv_populates_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    env_file = tmp_path / ".env"
+    env_file.write_text('# comment\nNVD_API_KEY="abc123"\n\nBLANK=\n', encoding="utf-8")
+    monkeypatch.delenv("NVD_API_KEY", raising=False)
+
+    load_dotenv(env_file)
+
+    assert os.environ["NVD_API_KEY"] == "abc123"
+    assert "BLANK" not in os.environ
+
+
+def test_real_environment_outranks_dotenv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A container sets the key directly; a stale file must not shadow it."""
+    env_file = tmp_path / ".env"
+    env_file.write_text("NVD_API_KEY=from-file\n", encoding="utf-8")
+    monkeypatch.setenv("NVD_API_KEY", "from-environment")
+
+    load_dotenv(env_file)
+
+    assert os.environ["NVD_API_KEY"] == "from-environment"
+
+
+def test_dotenv_absent_is_not_an_error(tmp_path: Path) -> None:
+    load_dotenv(tmp_path / "nope.env")
