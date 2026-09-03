@@ -22,6 +22,7 @@ from threatrag.ingest.sources.attack_cti import AttackCtiSource
 from threatrag.ingest.sources.internal_notes import InternalNotesSource
 from threatrag.ingest.sources.nvd_api import NvdClient
 from threatrag.ingest.sources.nvd_cve import NvdCveSource
+from threatrag.ingest.sources.vendor_report import VendorReportSource
 from threatrag.rag.generators.ollama import OllamaGenerator
 from threatrag.rag.pipeline import AnswerPipeline
 from threatrag.rag.retriever import Retriever
@@ -104,6 +105,16 @@ def build_nvd_source(config: Config) -> NvdCveSource:
     )
 
 
+def build_vendor_source(config: Config) -> VendorReportSource:
+    spec = config.sources.get("vendor_report", {})
+    manifest = spec.get("manifest")
+    return (
+        VendorReportSource(config.paths.raw_dir, manifest)
+        if manifest
+        else VendorReportSource(config.paths.raw_dir)
+    )
+
+
 def build_sources(config: Config) -> list[DocumentSource]:
     """Every corpus the config marks enabled, in ingestion order.
 
@@ -114,6 +125,7 @@ def build_sources(config: Config) -> list[DocumentSource]:
     builders: dict[str, Callable[[Config], DocumentSource]] = {
         "attack_cti": build_attack_source,
         "nvd_cve": build_nvd_source,
+        "vendor_report": build_vendor_source,
         "internal_notes": build_internal_notes_source,
     }
     sources: list[DocumentSource] = []

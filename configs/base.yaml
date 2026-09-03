@@ -90,6 +90,9 @@ sources:
     severities: [CRITICAL, HIGH]
     recent_limit: 5000
   vendor_report:
-    enabled: false
+    # Manifest committed, PDFs gitignored: they are copyrighted publications,
+    # so the repo reproduces the corpus without redistributing it.
+    enabled: true
+    manifest: corpora/vendor_reports.yaml
 
 defenses: []                 # names of enabled defences; empty = undefended baseline

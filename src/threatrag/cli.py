@@ -45,7 +45,7 @@ def _config(config: Path | None, overlay: Path | None = None) -> Config:
     return load_config(config, overlay)
 
 
-FETCHABLE = ("attack", "nvd", "all")
+FETCHABLE = ("attack", "nvd", "vendor", "all")
 
 
 def _fetch_attack(cfg: Config, force: bool) -> None:
@@ -76,6 +76,34 @@ def _fetch_nvd(cfg: Config, force: bool) -> None:
     )
 
 
+def _fetch_vendor(cfg: Config, force: bool) -> None:
+    source = factory.build_vendor_source(cfg)
+    console.print(f"Fetching {len(source.specs)} vendor reports")
+    source.fetch(force=force)
+
+    table = Table(title="Vendor reports", show_header=True)
+    table.add_column("id")
+    table.add_column("publisher")
+    table.add_column("via")
+    table.add_column("MB", justify="right")
+    table.add_column("sha256")
+    for spec in source.specs:
+        size = source.path_for(spec).stat().st_size / 1e6
+        table.add_row(
+            spec.id,
+            spec.publisher,
+            spec.via,
+            f"{size:.1f}",
+            source.observed.get(spec.id, "")[:12],
+        )
+    console.print(table)
+    if any(spec.sha256 is None for spec in source.specs):
+        console.print(
+            "[yellow]Some reports have no sha256 in the manifest.[/] Paste the digests "
+            "above into corpora/vendor_reports.yaml so a changed document is detected."
+        )
+
+
 @app.command()
 def fetch(
     corpus: Annotated[
@@ -95,6 +123,8 @@ def fetch(
         _fetch_attack(cfg, force)
     if corpus in ("nvd", "all"):
         _fetch_nvd(cfg, force)
+    if corpus in ("vendor", "all"):
+        _fetch_vendor(cfg, force)
 
 
 @app.command()
