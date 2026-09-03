@@ -60,6 +60,9 @@ class GenerationConfig(BaseModel):
     model: str = "qwen2.5:7b"
     temperature: float = 0.0
     num_ctx: int = 8192
+    # Character budget for retrieved passages. Ollama truncates an over-long
+    # prompt silently, so this is bounded here where it can be recorded.
+    max_context_chars: int = 12000
 
 
 class PathsConfig(BaseModel):

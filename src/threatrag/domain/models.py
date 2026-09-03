@@ -126,6 +126,10 @@ class Answer(BaseModel):
     text: str
     retrieved: list[RetrievedChunk] = Field(default_factory=list)
     citations: list[str] = Field(default_factory=list)
+    # Markers the model emitted that match no retrieved passage: an invented
+    # source. Recorded rather than suppressed so M7 can measure groundedness
+    # instead of a defence quietly hiding the evidence of its absence.
+    unsupported_citations: list[str] = Field(default_factory=list)
     model: str = ""
     defenses_applied: list[str] = Field(default_factory=list)
     blocked: bool = False

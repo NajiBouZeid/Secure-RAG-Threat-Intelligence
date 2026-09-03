@@ -12,6 +12,7 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 
 from threatrag import factory
@@ -145,6 +146,40 @@ def query(
             f"{hit.score:.3f}", hit.chunk.source_ref, hit.chunk.title, hit.chunk.tlp.value
         )
     console.print(table)
+
+
+@app.command()
+def ask(
+    question: Annotated[str, typer.Argument(help="Question to answer.")],
+    config: ConfigOption = None,
+    overlay: OverlayOption = None,
+    k: Annotated[int | None, typer.Option("--k", help="Override top-k.")] = None,
+    clearance: Annotated[
+        TLP, typer.Option("--clearance", help="Caller TLP clearance.")
+    ] = TLP.CLEAR,
+) -> None:
+    """Answer a question over the indexed corpora, with citations."""
+    cfg = _config(config, overlay)
+    pipeline = factory.build_answer_pipeline(cfg)
+    principal = Principal(id="cli", clearance=clearance)
+
+    with console.status("Retrieving and generating..."):
+        answer = pipeline.answer(question, principal=principal, k=k)
+
+    console.print(Panel(answer.text, title=f"{answer.model} @ clearance={clearance.value}"))
+
+    if answer.citations:
+        table = Table(title="Citations", show_header=False)
+        for index, citation in enumerate(answer.citations, start=1):
+            table.add_row(str(index), citation)
+        console.print(table)
+
+    # Surfaced, not suppressed: an invented marker is the signal that the answer
+    # drifted off its evidence, and hiding it here would hide it from M7 too.
+    if answer.unsupported_citations:
+        console.print(
+            f"[yellow]unsupported citations[/]: {', '.join(answer.unsupported_citations)}"
+        )
 
 
 @app.command(name="eval-retrieval")

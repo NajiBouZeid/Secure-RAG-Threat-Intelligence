@@ -19,6 +19,7 @@ from threatrag.ingest.pipeline import IngestPipeline
 from threatrag.ingest.sources.attack_cti import AttackCtiSource
 from threatrag.ingest.sources.internal_notes import InternalNotesSource
 from threatrag.rag.generators.ollama import OllamaGenerator
+from threatrag.rag.pipeline import AnswerPipeline
 from threatrag.rag.retriever import Retriever
 
 
@@ -101,6 +102,14 @@ def build_pipeline(config: Config, embedder_name: str | None = None) -> IngestPi
         embedder=build_embedder(config, embedder_name),
         store=build_store(config),
         vector_spec=vector_spec(config),
+    )
+
+
+def build_answer_pipeline(config: Config, embedder_name: str | None = None) -> AnswerPipeline:
+    return AnswerPipeline(
+        retriever=build_retriever(config, embedder_name),
+        generator=build_generator(config),
+        max_context_chars=config.generation.max_context_chars,
     )
 
 
