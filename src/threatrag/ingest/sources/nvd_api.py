@@ -42,6 +42,8 @@ from typing import Any
 
 import httpx
 
+from threatrag.ingest.sources.base import USER_AGENT
+
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 
 # Required by the NVD terms of use, displayed prominently by anything built on
@@ -166,7 +168,7 @@ class NvdClient:
     def _headers(self) -> dict[str, str]:
         headers = {
             # Identifies the project to NVD's operators, as their guidance asks.
-            "User-Agent": "threatrag/0.1 (research; secure-rag-threat-intelligence)",
+            "User-Agent": USER_AGENT,
             "Accept": "application/json",
         }
         if self._api_key:

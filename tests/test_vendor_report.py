@@ -230,3 +230,33 @@ def test_extraction_floor_is_a_real_guard() -> None:
     """A scanned PDF yields a few characters per page that still embed and retrieve."""
     assert MIN_CHARS_PER_PAGE >= 100
     assert ExtractionError.__mro__[1] is RuntimeError
+
+
+def test_downloads_identify_the_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Some vendor CDNs 403 httpx's default UA while serving the same public PDF."""
+    from threatrag.ingest.sources import base
+
+    seen: dict[str, str] = {}
+
+    class FakeStream:
+        def __enter__(self) -> FakeStream:
+            return self
+
+        def __exit__(self, *exc: object) -> None:
+            return None
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def iter_bytes(self, chunk_size: int = 0) -> list[bytes]:
+            return [b"%PDF-1.7"]
+
+    def fake_stream(method: str, url: str, **kwargs: object) -> FakeStream:
+        seen.update(kwargs.get("headers") or {})  # type: ignore[arg-type]
+        return FakeStream()
+
+    monkeypatch.setattr(base.httpx, "stream", fake_stream)
+    base.download("https://example.test/x.pdf", tmp_path / "x.pdf")
+
+    assert seen["User-Agent"] == base.USER_AGENT
+    assert "httpx" not in seen["User-Agent"]

@@ -9,6 +9,14 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 DOWNLOAD_TIMEOUT = httpx.Timeout(30.0, read=300.0)
 
+# Identifies the project on every outbound request. Not cosmetic: some vendor
+# CDNs reject httpx's default "python-httpx/x.y" with a 403 while serving the
+# same public PDF to anything that names itself, so without this the vendor
+# fetch fails on a file that is not actually restricted. The point is to say
+# who we are, not to look like a browser -- a request that has to disguise
+# itself to succeed is one this project should not be making.
+USER_AGENT = "threatrag/0.1 (research; secure-rag-threat-intelligence)"
+
 
 def download(url: str, destination: Path, *, force: bool = False) -> Path:
     """Stream ``url`` to ``destination``. No-op when the file already exists.
@@ -23,7 +31,13 @@ def download(url: str, destination: Path, *, force: bool = False) -> Path:
     tmp = destination.with_suffix(destination.suffix + ".part")
     with Progress(SpinnerColumn(), TextColumn("{task.description}"), transient=True) as progress:
         progress.add_task(f"Downloading {destination.name}", total=None)
-        with httpx.stream("GET", url, timeout=DOWNLOAD_TIMEOUT, follow_redirects=True) as response:
+        with httpx.stream(
+            "GET",
+            url,
+            timeout=DOWNLOAD_TIMEOUT,
+            follow_redirects=True,
+            headers={"User-Agent": USER_AGENT},
+        ) as response:
             response.raise_for_status()
             with tmp.open("wb") as handle:
                 for block in response.iter_bytes(chunk_size=1 << 16):
