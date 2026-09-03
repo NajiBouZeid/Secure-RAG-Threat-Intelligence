@@ -7,6 +7,7 @@ benchmark runner would need to duplicate.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Annotated
 
@@ -21,6 +22,12 @@ from threatrag.domain.models import TLP, Principal
 from threatrag.eval import goldset as goldset_module
 from threatrag.eval.metrics import aggregate, score_query
 from threatrag.ingest.pipeline import IngestStats
+
+# Citations carry an em dash, and a Windows console defaults to cp1252, which
+# renders it as a replacement character. errors="replace" keeps a legacy console
+# printing something rather than raising mid-table.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 app = typer.Typer(add_completion=False, help="Secure Threat Intelligence RAG toolkit.")
 console = Console()
