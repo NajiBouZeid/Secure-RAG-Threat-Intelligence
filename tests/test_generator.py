@@ -7,6 +7,8 @@ records a blank answer -- are actually exercised in CI.
 
 from __future__ import annotations
 
+import re
+
 import httpx
 import pytest
 
@@ -50,7 +52,7 @@ def test_missing_model_names_the_pull_command() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(404, json={"error": "model not found"})
 
-    with pytest.raises(GenerationError, match="ollama pull qwen2.5:7b"):
+    with pytest.raises(GenerationError, match=re.escape("ollama pull qwen2.5:7b")):
         _generator(handler).generate("sys", "user")
 
 

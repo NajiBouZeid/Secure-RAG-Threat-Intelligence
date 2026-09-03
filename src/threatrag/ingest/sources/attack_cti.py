@@ -83,6 +83,7 @@ class AttackCtiSource:
     """Normalises the ATT&CK Enterprise bundle into :class:`Document` objects."""
 
     name = "attack_cti"
+    source_type = SourceType.ATTACK_CTI
 
     def __init__(
         self,

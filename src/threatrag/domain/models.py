@@ -50,6 +50,7 @@ class TrustTier(IntEnum):
 
 class SourceType(StrEnum):
     ATTACK_CTI = "attack_cti"
+    INTERNAL_NOTE = "internal_note"
     NVD_CVE = "nvd_cve"
     VENDOR_REPORT = "vendor_report"
     SYNTHETIC_ADVERSARIAL = "synthetic_adversarial"

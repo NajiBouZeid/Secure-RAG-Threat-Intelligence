@@ -53,6 +53,12 @@ sources:
     url: https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json
     include_revoked: false
     include_deprecated: false
+  internal_notes:
+    # Authored, not fetched: the only corpus in the repo rather than in data/.
+    # Enabled by default because without it every indexed document is TLP:CLEAR
+    # and the access-control path is untestable end to end.
+    enabled: true
+    path: corpora/internal_notes.yaml
   nvd_cve:
     enabled: false
   vendor_report:

@@ -8,13 +8,16 @@ what lets the Phase 3 benchmark sweep configurations instead of forking scripts.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from threatrag.config import Config
-from threatrag.domain.ports import Chunker, Embedder, Generator, VectorStore
+from threatrag.domain.ports import Chunker, DocumentSource, Embedder, Generator, VectorStore
 from threatrag.index.embedders.sentence_transformer import SentenceTransformerEmbedder
 from threatrag.index.qdrant_store import QdrantVectorStore
 from threatrag.ingest.chunking import build_chunker
 from threatrag.ingest.pipeline import IngestPipeline
 from threatrag.ingest.sources.attack_cti import AttackCtiSource
+from threatrag.ingest.sources.internal_notes import InternalNotesSource
 from threatrag.rag.generators.ollama import OllamaGenerator
 from threatrag.rag.retriever import Retriever
 
@@ -61,6 +64,30 @@ def build_attack_source(config: Config) -> AttackCtiSource:
         include_revoked=bool(spec.get("include_revoked", False)),
         include_deprecated=bool(spec.get("include_deprecated", False)),
     )
+
+
+def build_internal_notes_source(config: Config) -> InternalNotesSource:
+    spec = config.sources.get("internal_notes", {})
+    path = spec.get("path")
+    return InternalNotesSource(path) if path else InternalNotesSource()
+
+
+def build_sources(config: Config) -> list[DocumentSource]:
+    """Every corpus the config marks enabled, in ingestion order.
+
+    Ordering is not cosmetic: the public corpus goes in first so that a partial
+    ingest leaves the index public rather than leaving restricted notes sitting
+    in a collection whose public half is missing.
+    """
+    builders: dict[str, Callable[[Config], DocumentSource]] = {
+        "attack_cti": build_attack_source,
+        "internal_notes": build_internal_notes_source,
+    }
+    sources: list[DocumentSource] = []
+    for key, builder in builders.items():
+        if config.sources.get(key, {}).get("enabled", False):
+            sources.append(builder(config))
+    return sources
 
 
 def vector_spec(config: Config) -> dict[str, int]:

@@ -19,6 +19,7 @@ from threatrag.config import Config, load_config
 from threatrag.domain.models import TLP, Principal
 from threatrag.eval import goldset as goldset_module
 from threatrag.eval.metrics import aggregate, score_query
+from threatrag.ingest.pipeline import IngestStats
 
 app = typer.Typer(add_completion=False, help="Secure Threat Intelligence RAG toolkit.")
 console = Console()
@@ -61,24 +62,39 @@ def ingest(
         bool,
         typer.Option("--reset", help="Drop this corpus from the collection before indexing."),
     ] = False,
+    source_filter: Annotated[
+        str | None,
+        typer.Option("--source", help="Ingest only this source; default is every enabled one."),
+    ] = None,
 ) -> None:
     """Parse, chunk, embed and index the enabled corpora."""
     cfg = _config(config, overlay)
-    source = factory.build_attack_source(cfg)
+    sources = factory.build_sources(cfg)
+    if source_filter is not None:
+        available = [source.name for source in sources]
+        sources = [source for source in sources if source.name == source_filter]
+        if not sources:
+            raise typer.BadParameter(f"No enabled source named {source_filter!r}; have {available}")
+    if not sources:
+        raise typer.BadParameter("No sources enabled in the config.")
     pipeline = factory.build_pipeline(cfg, embedder)
+    store = factory.build_store(cfg)
 
-    # Chunk ids are content-addressed, so re-ingesting with a different chunker
-    # writes new points rather than replacing the old ones: without --reset the
-    # collection would quietly hold two strategies at once and every metric
-    # measured against it would be meaningless.
-    if reset:
-        removed = factory.build_store(cfg).delete_by_source_type(source.name)
-        console.print(f"[yellow]reset[/] removed {removed} existing {source.name} chunks")
+    stats = IngestStats()
+    for source in sources:
+        # Chunk ids are content-addressed, so re-ingesting with a different
+        # chunker writes new points rather than replacing the old ones: without
+        # --reset the collection would quietly hold two strategies at once and
+        # every metric measured against it would be meaningless.
+        if reset:
+            removed = store.delete_by_source_type(source.source_type.value)
+            console.print(f"[yellow]reset[/] removed {removed} existing {source.name} chunks")
 
-    console.print(f"Ingesting [bold]{source.name}[/] with chunker={cfg.chunking.strategy}")
-    stats = pipeline.run(source.load())
+        console.print(f"Ingesting [bold]{source.name}[/] with chunker={cfg.chunking.strategy}")
+        stats = stats.merge(pipeline.run(source.load()))
 
     table = Table(title="Ingestion", show_header=False)
+    table.add_row("sources", ", ".join(source.name for source in sources))
     table.add_row("documents seen", str(stats.documents_seen))
     table.add_row("documents rejected", str(stats.documents_rejected))
     table.add_row("chunks indexed", str(stats.chunks_indexed))

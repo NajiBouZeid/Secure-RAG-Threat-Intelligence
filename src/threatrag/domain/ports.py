@@ -10,7 +10,14 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Protocol, runtime_checkable
 
-from threatrag.domain.models import Answer, Chunk, Document, Principal, RetrievedChunk
+from threatrag.domain.models import (
+    Answer,
+    Chunk,
+    Document,
+    Principal,
+    RetrievedChunk,
+    SourceType,
+)
 from threatrag.domain.types import Matrix, Vector
 
 
@@ -87,6 +94,11 @@ class DocumentSource(Protocol):
 
     @property
     def name(self) -> str: ...
+
+    @property
+    def source_type(self) -> SourceType:
+        """Which corpus its documents belong to; what ``--reset`` deletes by."""
+        ...
 
     def fetch(self) -> None:
         """Download raw material to disk. Idempotent."""
