@@ -14,6 +14,7 @@ is being tested on.
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -38,6 +39,11 @@ STIX_KINDS: dict[str, str] = {
 # are included even though they are not indexed as documents of their own: the
 # procedure text is what matters, not the campaign entry.
 PROCEDURE_ACTORS = frozenset({"intrusion-set", "malware", "tool", "campaign"})
+
+# ATT&CK does not record CVEs in a structured field. They appear only in prose,
+# so the CVE-to-technique link has to be read out of the text -- see
+# :meth:`AttackCtiSource.cve_mentions` for what that costs.
+CVE_PATTERN = re.compile(r"CVE-\d{4}-\d{4,7}", re.IGNORECASE)
 
 
 def _external_id(obj: dict[str, Any]) -> str | None:
@@ -261,6 +267,67 @@ class AttackCtiSource:
                 "is_subtechnique": str(bool(obj.get("x_mitre_is_subtechnique", False))),
             },
         )
+
+    def cve_mentions(self) -> dict[str, list[str]]:
+        """CVE id -> the ATT&CK ids whose text mentions it, sorted.
+
+        This is the join that makes the CVE corpus worth having: without it the
+        CVEs sit beside ATT&CK in the index sharing no vocabulary, and a
+        question about a vulnerability retrieves nothing about how it is
+        actually used. It also picks the CVEs that are guaranteed relevant to
+        this corpus, so a bounded fetch spends its budget well.
+
+        **The link is read out of prose, and that is a real limitation rather
+        than an implementation detail.** ATT&CK has no structured CVE field:
+        every mention is inside a description, so this is a regular expression
+        over free text. A CVE named only as counter-example still links, and a
+        vulnerability described in words rather than by id does not link at all.
+        The claim the metadata can support is "ATT&CK discusses this CVE here",
+        not "this technique exploits this CVE" -- so it belongs in metadata as a
+        navigational cross-reference, and must not be promoted into gold labels
+        the way MITRE's curated ``uses`` edges are in
+        :meth:`group_technique_pairs`.
+
+        Only ``description`` fields are searched, matching what is actually
+        indexed. External reference titles also mention CVEs, but those are
+        citation metadata this project never puts in a document, and a CVE in
+        the title of a linked blog post is a much weaker signal than one in
+        MITRE's own prose.
+        """
+        objects = self._bundle()
+        by_stix = {obj["id"]: obj for obj in objects if "id" in obj}
+        mentions: dict[str, set[str]] = {}
+
+        def record(cve_ids: set[str], holder: dict[str, Any]) -> None:
+            if holder.get("revoked") and not self._include_revoked:
+                return
+            if holder.get("x_mitre_deprecated") and not self._include_deprecated:
+                return
+            attack_id = _external_id(holder)
+            if attack_id is None:
+                return
+            for cve_id in cve_ids:
+                mentions.setdefault(cve_id, set()).add(attack_id)
+
+        for obj in objects:
+            found = {
+                match.group(0).upper()
+                for match in CVE_PATTERN.finditer(str(obj.get("description") or ""))
+            }
+            if not found:
+                continue
+            if obj.get("type") == "relationship":
+                # A relationship carries no id of its own. Its description is
+                # the procedure text folded into the technique document, so the
+                # mention belongs to both ends of the edge.
+                for ref in ("source_ref", "target_ref"):
+                    endpoint = by_stix.get(str(obj.get(ref, "")))
+                    if endpoint is not None:
+                        record(found, endpoint)
+            else:
+                record(found, obj)
+
+        return {cve_id: sorted(ids) for cve_id, ids in sorted(mentions.items())}
 
     def group_technique_pairs(self) -> dict[str, dict[str, Any]]:
         """Gold labels: for each threat group, the techniques ATT&CK says it uses.

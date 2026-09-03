@@ -172,3 +172,48 @@ def test_a_uses_edge_without_a_description_is_skipped(tmp_path: Path) -> None:
     documents = {d.source_ref: d for d in make_source(tmp_path, bundle).load()}
 
     assert "## Procedure Examples" not in documents["T1055"].text
+
+
+def test_cve_mentions_link_both_ends_of_a_procedure_edge(tmp_path: Path) -> None:
+    """The join that stops the CVE corpus sitting beside ATT&CK sharing no vocabulary."""
+    bundle = json.loads(json.dumps(BUNDLE))
+    bundle["objects"] += [
+        {
+            "id": "intrusion-set--0001",
+            "type": "intrusion-set",
+            "name": "Ke3chang",
+            "description": "A threat group.",
+            "external_references": [attack_ref("G0004")],
+        },
+        {
+            "id": "relationship--0002",
+            "type": "relationship",
+            "relationship_type": "uses",
+            "source_ref": "intrusion-set--0001",
+            "target_ref": TECHNIQUE_STIX_ID,
+            "description": "Ke3chang exploited cve-2021-44228 for access.",
+        },
+    ]
+
+    mentions = make_source(tmp_path, bundle).cve_mentions()
+
+    # Normalised to upper case, and attributed to the technique and the actor.
+    assert mentions["CVE-2021-44228"] == ["G0004", "T1055"]
+
+
+def test_cve_mentions_ignore_reference_titles(tmp_path: Path) -> None:
+    """Citation metadata is never indexed, so a CVE in a blog title is not a link."""
+    bundle = json.loads(json.dumps(BUNDLE))
+    bundle["objects"][0]["external_references"].append(
+        {"source_name": "Vendor", "description": "Analysis of CVE-2099-1234", "url": "http://x"}
+    )
+
+    assert make_source(tmp_path, bundle).cve_mentions() == {}
+
+
+def test_cve_mentions_skip_deprecated_objects(tmp_path: Path) -> None:
+    bundle = json.loads(json.dumps(BUNDLE))
+    bundle["objects"][0]["description"] = "Exploits CVE-2021-44228."
+    bundle["objects"][0]["x_mitre_deprecated"] = True
+
+    assert make_source(tmp_path, bundle).cve_mentions() == {}
