@@ -60,6 +60,8 @@
   .warn { color: var(--warn); font-size: 13px; margin-top: 10px; }
   .error { color: var(--danger); }
   .muted { color: var(--muted); }
+  footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);
+           font-size: 0.8rem; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -201,5 +203,15 @@ fetch("/api/principals").then((r) => r.json()).then((list) => {
     .join("");
 });
 </script>
+
+<footer>
+  <!-- Required by the NVD terms of use, which ask that services using the API
+       display this notice prominently. It lives here rather than in document
+       text: anything in a document body is chunked, embedded and retrievable,
+       and a legal notice surfacing as though it were threat intelligence would
+       be both noise and a small injection surface. -->
+  This product uses the NVD API but is not endorsed or certified by the NVD.
+  Vendor reports remain the copyright of their publishers.
+</footer>
 </body>
 </html>

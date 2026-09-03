@@ -90,13 +90,17 @@ make install                      # editable install with dev + pdf extras
 make up                           # start Qdrant on :6333
 ollama pull qwen2.5:7b-instruct   # generation model (M2 onward)
 
-make fetch                        # ATT&CK Enterprise STIX bundle (~40 MB)
+make fetch                        # ATT&CK (~40 MB), NVD CVEs, vendor PDFs (~73 MB)
 make ingest                       # parse, chunk, embed, index
 make query Q="What persistence techniques does APT29 use?"
 
 python -m threatrag.cli build-goldset
 make eval-retrieval               # Recall@k / MRR / nDCG
 ```
+
+An NVD API key is optional. Without one the CVE fetch throttles to the public rate limit
+and takes roughly forty minutes instead of five; with one, put it in `.env` as
+`NVD_API_KEY=...` (gitignored, and never read from the committed config).
 
 Ollama runs on the host rather than in Compose: GPU passthrough to a containerised Ollama
 on Windows is unreliable and buys nothing. The API container reaches it through
@@ -124,7 +128,7 @@ tests/
 
 - [x] **M1** — ATT&CK ingest, chunking strategies, Qdrant index, retriever, Recall@k harness
 - [ ] **M2** — Generation with citations, FastAPI + demo UI, ACL wired end-to-end
-- [ ] **M3** — NVD CVE and vendor PDF sources, chunking-strategy comparison
+- [x] **M3** — NVD CVE and vendor PDF sources, chunking-strategy comparison
 - [ ] **M4** — Indirect injection, rendering exfiltration, retrieval poisoning
 - [ ] **M5** — Embedding inversion (GTR via vec2text; honest negative result for MiniLM)
 - [ ] **M6** — Five defences, independently toggleable
@@ -135,6 +139,20 @@ tests/
 `attacks/` contains working prompt-injection and poisoning payloads. They exist to
 benchmark a **locally hosted, self-owned** system and are stored as inert data files that
 nothing executes automatically. Nothing here targets a third-party service.
+
+## Data sources and attribution
+
+This product uses the NVD API but is not endorsed or certified by the NVD.
+
+CVE records are reproduced with their descriptions verbatim; only enumerated lists are
+bounded, and every truncation is marked in the document text. Each document links its
+canonical NVD record.
+
+Vendor threat reports remain the copyright of their publishers. `corpora/vendor_reports.yaml`
+is a manifest of public URLs with hashes, not a redistribution: the PDFs are fetched at
+build time and never committed.
+
+MITRE ATT&CK(R) is a registered trademark of The MITRE Corporation.
 
 ## License
 
