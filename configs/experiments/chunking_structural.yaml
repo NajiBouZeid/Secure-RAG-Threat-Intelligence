@@ -1,0 +1,6 @@
+# The original M1 baseline, kept reproducible now that base.yaml defaults to
+# recursive. Same collection the first baseline was measured against.
+chunking:
+  strategy: structural
+vector_store:
+  collection: threatrag_chunk_structural

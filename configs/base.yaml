@@ -23,7 +23,9 @@ embedding:
       normalize: true
 
 chunking:
-  strategy: structural       # structural | recursive | fixed
+  # recursive, on evidence: it beat structural on every metric at k=5 and k=10
+  # against the M1 gold set (recall@5 +17.9% relative). See reports/m1_baseline.md.
+  strategy: recursive        # structural | recursive | fixed
   chunk_size: 512
   chunk_overlap: 64
 
@@ -39,7 +41,7 @@ retrieval:
 generation:
   backend: ollama
   url: http://localhost:11434
-  model: qwen2.5:7b-instruct
+  model: qwen2.5:7b
   temperature: 0.0
   num_ctx: 8192
 

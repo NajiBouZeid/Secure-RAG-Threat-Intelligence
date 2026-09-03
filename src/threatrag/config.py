@@ -38,7 +38,7 @@ class EmbeddingConfig(BaseModel):
 
 
 class ChunkingConfig(BaseModel):
-    strategy: str = "structural"
+    strategy: str = "recursive"
     chunk_size: int = 512
     chunk_overlap: int = 64
 
@@ -57,7 +57,7 @@ class RetrievalConfig(BaseModel):
 class GenerationConfig(BaseModel):
     backend: str = "ollama"
     url: str = "http://localhost:11434"
-    model: str = "qwen2.5:7b-instruct"
+    model: str = "qwen2.5:7b"
     temperature: float = 0.0
     num_ctx: int = 8192
 
