@@ -9,12 +9,13 @@ what lets the Phase 3 benchmark sweep configurations instead of forking scripts.
 from __future__ import annotations
 
 from threatrag.config import Config
-from threatrag.domain.ports import Chunker, Embedder, VectorStore
+from threatrag.domain.ports import Chunker, Embedder, Generator, VectorStore
 from threatrag.index.embedders.sentence_transformer import SentenceTransformerEmbedder
 from threatrag.index.qdrant_store import QdrantVectorStore
 from threatrag.ingest.chunking import build_chunker
 from threatrag.ingest.pipeline import IngestPipeline
 from threatrag.ingest.sources.attack_cti import AttackCtiSource
+from threatrag.rag.generators.ollama import OllamaGenerator
 from threatrag.rag.retriever import Retriever
 
 
@@ -32,6 +33,18 @@ def build_store(config: Config) -> VectorStore:
     if backend != "qdrant":
         raise ValueError(f"Unsupported vector store backend {backend!r}")
     return QdrantVectorStore(config.vector_store.url, config.vector_store.collection)
+
+
+def build_generator(config: Config) -> Generator:
+    backend = config.generation.backend
+    if backend != "ollama":
+        raise ValueError(f"Unsupported generation backend {backend!r}")
+    return OllamaGenerator(
+        model=config.generation.model,
+        url=config.generation.url,
+        temperature=config.generation.temperature,
+        num_ctx=config.generation.num_ctx,
+    )
 
 
 def build_chunker_from_config(config: Config) -> Chunker:
