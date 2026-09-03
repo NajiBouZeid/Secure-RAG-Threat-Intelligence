@@ -43,7 +43,6 @@ NVD_DETAIL_URL = "https://nvd.nist.gov/vuln/detail/"
 # near-identical version strings -- text that embeds poorly and answers nothing.
 # The description, which is the part that carries meaning, is never bounded.
 MAX_PRODUCTS = 25
-MAX_REFERENCES = 15
 
 # NVD emits these placeholders where no CWE was assigned. They are not
 # weaknesses and carry no signal.
@@ -104,15 +103,26 @@ def _products(record: Mapping[str, Any]) -> list[str]:
     return seen
 
 
-def _references(record: Mapping[str, Any]) -> list[str]:
-    lines: list[str] = []
-    for reference in record.get("references", []) or []:
-        url = str(reference.get("url", "")).strip()
-        if not url:
-            continue
-        tags = ", ".join(str(tag) for tag in reference.get("tags", []) or [])
-        lines.append(f"- {url} ({tags})" if tags else f"- {url}")
-    return lines
+def _reference_summary(record: Mapping[str, Any]) -> str:
+    """What the references *are*, not where they point.
+
+    The URLs were indexed first and were a mistake worth recording: on a
+    measured sample they were roughly 70% of a CVE document and produced whole
+    chunks of nothing but links. A URL is not prose. It embeds badly, competes
+    for the same top-k slots as text that can actually answer a question, and
+    projected the CVE corpus to more chunks than all of ATT&CK.
+
+    The tags carry the part that is retrievable -- whether a patch exists,
+    whether exploit code is public, whether a vendor has advised -- in about
+    one line instead of forty. The canonical NVD URL on the document still
+    leads to the full reference list, unmodified.
+    """
+    references = record.get("references", []) or []
+    tags = sorted({str(tag) for reference in references for tag in reference.get("tags", []) or []})
+    if not references:
+        return ""
+    count = f"{len(references)} reference" + ("s" if len(references) != 1 else "")
+    return f"{', '.join(tags)} ({count})" if tags else count
 
 
 def _bounded(items: Sequence[str], limit: int, noun: str) -> str:
@@ -159,7 +169,6 @@ def to_document(record: Mapping[str, Any], attack_ids: Sequence[str] = ()) -> Do
 
     cwes = _cwes(record)
     products = _products(record)
-    references = _references(record)
 
     body = "".join(
         (
@@ -169,7 +178,7 @@ def to_document(record: Mapping[str, Any], attack_ids: Sequence[str] = ()) -> Do
             section("Severity", "\n".join(severity_lines)),
             section("Weaknesses", "\n".join(cwes)),
             section("Affected Products", _bounded(products, MAX_PRODUCTS, "affected products")),
-            section("References", _bounded(references, MAX_REFERENCES, "references")),
+            section("References", _reference_summary(record)),
             # Last: a navigational cross-reference, not an assertion that the
             # technique exploits this CVE. See AttackCtiSource.cve_mentions.
             section("Discussed by ATT&CK", ", ".join(attack_ids)),

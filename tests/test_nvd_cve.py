@@ -321,3 +321,19 @@ def test_each_requested_severity_is_queried(tmp_path: Path, severity: str) -> No
     list(_source(tmp_path, fake, severities=["CRITICAL", "HIGH"]).load())
 
     assert any(f"cvssV3Severity={severity}" in url for url in fake.urls)
+
+
+def test_references_are_summarised_not_listed() -> None:
+    """URLs were ~70% of a CVE document and produced chunks of nothing but links."""
+    text = to_document(record()).text
+
+    assert "## References" in text
+    assert "Patch (2 references)" in text
+    # The links themselves are not indexed; the canonical NVD URL still leads
+    # to the full, unmodified reference list.
+    assert "openwall.com" not in text
+    assert "news.ycombinator.com" not in text
+
+
+def test_a_cve_with_no_references_has_no_section() -> None:
+    assert "## References" not in to_document(record(references=[])).text
