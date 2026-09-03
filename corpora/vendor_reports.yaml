@@ -1,0 +1,116 @@
+# Vendor threat reports: the VENDOR-tier corpus.
+#
+# The manifest is committed; the PDFs are not. That is a licensing decision as
+# much as a size one -- these are copyrighted vendor publications, and
+# redistributing them from a public repository is a problem this project does
+# not need. A manifest plus a fetcher reproduces the corpus exactly without
+# republishing anyone's report.
+#
+# Why these ten. They are picked for ATT&CK technique density rather than brand
+# recognition, because the point of the vendor corpus is to sit *beside* MITRE's
+# authoritative text on the same techniques. Red Canary's report is structured
+# by ATT&CK technique and is the closest thing to a perfect fit; Sophos and
+# Talos carry named tooling and TTPs from incident data; Mandiant, CrowdStrike
+# and Unit 42 name the same APT groups the ATT&CK gold set already covers, which
+# is what creates genuine retrieval competition. Dragos is the deliberate
+# outlier: ICS/OT is a domain ATT&CK Enterprise does not cover, so it tests
+# whether the system declines to answer or confabulates. Verizon's DBIR was
+# considered and left out -- aggregate statistics, very low named-technique
+# density, and large.
+#
+# `via` records provenance honestly. `publisher` means the URL is hosted by the
+# organisation that wrote the report. `mirror` means it is a third-party copy,
+# used only where the publisher gates the PDF behind a form. sha256 is recorded
+# on first fetch and verified on every one after, so URL rot or a swapped
+# document fails loudly instead of being ingested as though nothing changed.
+#
+# All ten resolve to a direct, ungated PDF; every URL was checked before being
+# committed here.
+
+reports:
+  - id: RC-TDR-2026
+    title: Threat Detection Report 2026
+    publisher: Red Canary
+    published: "2026-03"
+    # Organised by ATT&CK technique. The single best fit in this list.
+    # info.zscaler.com is correct: Zscaler acquired Red Canary.
+    url: https://info.zscaler.com/rs/306-ZEJ-256/images/2026-ThreatDetectionReport_Guide_RedCanary.pdf
+    via: publisher
+    filename: redcanary-threat-detection-report-2026.pdf
+
+  - id: RC-TDR-2025
+    title: Threat Detection Report 2025
+    publisher: Red Canary
+    published: "2025-03"
+    url: https://info.zscaler.com/rs/306-ZEJ-256/images/2025ThreatDetectionReport_Guide_RedCanary.pdf
+    via: publisher
+    filename: redcanary-threat-detection-report-2025.pdf
+
+  - id: SOPHOS-AAR-2025
+    title: "It Takes Two: The 2025 Sophos Active Adversary Report"
+    publisher: Sophos
+    published: "2025-04"
+    # Sophos publishes the PDF itself on GitHub alongside the case data.
+    url: https://raw.githubusercontent.com/sophoslabs/Active_Adversary_Report/main/It%20Takes%20Two%20--%202025%20Sophos%20Active%20Adversary%20Report.pdf
+    via: publisher
+    filename: sophos-active-adversary-report-2025.pdf
+
+  - id: TALOS-YIR-2025
+    title: Cisco Talos 2025 Year in Review
+    publisher: Cisco Talos
+    published: "2026-03"
+    url: https://blog.talosintelligence.com/content/files/2026/03/2025YiR-report.pdf
+    via: publisher
+    filename: talos-year-in-review-2025.pdf
+
+  - id: MANDIANT-MTRENDS-2025
+    title: M-Trends 2025
+    publisher: Mandiant (Google Cloud)
+    published: "2025-04"
+    url: https://services.google.com/fh/files/misc/m-trends-2025-en.pdf
+    via: publisher
+    filename: mandiant-m-trends-2025.pdf
+
+  - id: MANDIANT-MTRENDS-2026-EXEC
+    title: M-Trends 2026 Executive Edition
+    publisher: Mandiant (Google Cloud)
+    published: "2026-03"
+    # The full 2026 edition is not published at a stable ungated URL; the
+    # executive edition is, and covers the same findings more briefly.
+    url: https://services.google.com/fh/files/misc/m-trends-2026-executive-edition-en.pdf
+    via: publisher
+    filename: mandiant-m-trends-2026-executive.pdf
+
+  - id: CROWDSTRIKE-GTR-2025
+    title: 2025 Global Threat Report
+    publisher: CrowdStrike
+    published: "2025-02"
+    url: https://go.crowdstrike.com/rs/281-OBQ-266/images/CrowdStrikeGlobalThreatReport2025.pdf
+    via: publisher
+    filename: crowdstrike-global-threat-report-2025.pdf
+
+  - id: UNIT42-GIRR-2026
+    title: 2026 Unit 42 Global Incident Response Report
+    publisher: Palo Alto Networks Unit 42
+    published: "2026-02"
+    url: https://start.paloaltonetworks.com/rs/531-OCS-018/images/Unit42-Global-Incident-Response-Report.pdf
+    via: publisher
+    filename: unit42-global-incident-response-report-2026.pdf
+
+  - id: IBM-XFORCE-TII-2026
+    title: X-Force Threat Intelligence Index 2026
+    publisher: IBM X-Force
+    published: "2026"
+    # Publisher hosts this behind a registration form; mirrored copy used.
+    url: https://raw.githubusercontent.com/jacobdjwilson/awesome-annual-security-reports/main/Annual%20Security%20Reports/2026/IBM-X-Force-Threat-Intelligence-Index-2026.pdf
+    via: mirror
+    filename: ibm-xforce-threat-intelligence-index-2026.pdf
+
+  - id: DRAGOS-YIR-2026
+    title: 2026 OT Cybersecurity Report - A Year in Review
+    publisher: Dragos
+    published: "2026-02"
+    # Publisher gates the full report; only an executive briefing is ungated.
+    url: https://raw.githubusercontent.com/jacobdjwilson/awesome-annual-security-reports/main/Annual%20Security%20Reports/2026/Dragos-OT-Cybersecurity-Report-A-Year-in-Review-2026.pdf
+    via: mirror
+    filename: dragos-ot-cybersecurity-year-in-review-2026.pdf
