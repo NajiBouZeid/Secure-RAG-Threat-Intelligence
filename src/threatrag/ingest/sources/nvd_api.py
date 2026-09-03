@@ -209,9 +209,11 @@ class NvdClient:
 
     # -- caching ---------------------------------------------------------
 
-    def _cached(self, name: str, params: dict[str, str | int]) -> dict[str, Any]:
+    def _cached(
+        self, name: str, params: dict[str, str | int], *, force: bool = False
+    ) -> dict[str, Any]:
         path = self._cache_dir / f"{name}.json"
-        if path.exists():
+        if path.exists() and not force:
             with path.open(encoding="utf-8") as handle:
                 cached: dict[str, Any] = json.load(handle)
             return cached
@@ -228,13 +230,13 @@ class NvdClient:
 
     # -- queries ---------------------------------------------------------
 
-    def get_cve(self, cve_id: str) -> dict[str, Any] | None:
+    def get_cve(self, cve_id: str, *, force: bool = False) -> dict[str, Any] | None:
         """One CVE record, or ``None`` when NVD has no such entry.
 
         ATT&CK cites CVE ids that NVD has since rejected or never held, so a
         miss is normal data, not an error.
         """
-        payload = self._cached(f"cve/{cve_id.upper()}", {"cveId": cve_id.upper()})
+        payload = self._cached(f"cve/{cve_id.upper()}", {"cveId": cve_id.upper()}, force=force)
         vulnerabilities = payload.get("vulnerabilities") or []
         if not vulnerabilities:
             return None
@@ -248,6 +250,7 @@ class NvdClient:
         *,
         severity: str | None = None,
         limit: int | None = None,
+        force: bool = False,
     ) -> Iterator[dict[str, Any]]:
         """CVEs published in ``[start, end)``, paged, newest window first.
 
@@ -270,7 +273,7 @@ class NvdClient:
                 params["cvssV3Severity"] = severity.upper()
 
             name = f"window/{start:%Y%m%d}-{end:%Y%m%d}-{severity or 'all'}-{start_index}"
-            payload = self._cached(name, params)
+            payload = self._cached(name, params, force=force)
 
             vulnerabilities = payload.get("vulnerabilities") or []
             for entry in vulnerabilities:
