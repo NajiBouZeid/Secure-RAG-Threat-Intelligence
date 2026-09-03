@@ -42,6 +42,19 @@ MIN_CHARS_PER_PAGE = 200
 _FURNITURE_THRESHOLD = 0.5
 
 _PAGE_NUMBER = re.compile(r"^(page\s*)?\d{1,4}(\s*(of|/)\s*\d{1,4})?$", re.IGNORECASE)
+
+# A table-of-contents line: text, a run of leader dots, a page number.
+_DOT_LEADER = re.compile(r"\.{4,}\s*\d{1,4}\s*$")
+
+# Digits vary between otherwise identical running feet ("... page 2" / "page 3"),
+# which defeats exact-match furniture detection. Blanking them first is what
+# lets those lines be recognised as the same piece of furniture.
+_DIGITS = re.compile(r"\d+")
+
+# pdfplumber renders faux-bold headings twice, so "THREAT" arrives as
+# "TTHHRREEAATT". Collapsed only when a whole line is doubled, never on
+# individual words: "HTTP" and "ll" inside ordinary prose must survive.
+_DOUBLED_RUN = re.compile(r"((.))+")
 _HYPHEN_BREAK = re.compile(r"(\w)-\n(\w)")
 _BLANK_RUN = re.compile(r"\n{3,}")
 
@@ -110,6 +123,30 @@ def sha256_of(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _undouble(line: str) -> str:
+    """Collapse a wholly character-doubled line back to single characters.
+
+    Applied per line and only when every alphanumeric run in it is doubled, so
+    an ordinary sentence containing "ll" or "ee" is left alone. Left uncollapsed
+    these headings are unmatchable garbage that still embeds and still occupies
+    a chunk.
+    """
+    stripped = line.strip()
+    letters = [c for c in stripped if c.isalnum()]
+    if len(letters) < 6 or len(letters) % 2:
+        return line
+    # Every alphanumeric character must pair with its neighbour.
+    if any(a != b for a, b in zip(letters[::2], letters[1::2], strict=True)):
+        return line
+    out, index = [], 0
+    while index < len(stripped):
+        char = stripped[index]
+        out.append(char)
+        step = 2 if index + 1 < len(stripped) and stripped[index + 1] == char else 1
+        index += step
+    return "".join(out)
+
+
 def _strip_furniture(pages: list[str]) -> list[str]:
     """Remove running heads, footers and page numbers.
 
@@ -122,20 +159,25 @@ def _strip_furniture(pages: list[str]) -> list[str]:
     for page in pages:
         # Count each distinct line once per page, so a phrase legitimately
         # repeated within one page is not mistaken for a running head.
-        counts.update({line.strip() for line in page.splitlines() if line.strip()})
+        counts.update(
+            {_DIGITS.sub("#", line.strip()) for line in page.splitlines() if line.strip()}
+        )
 
     threshold = max(2, int(len(pages) * _FURNITURE_THRESHOLD))
     furniture = {line for line, count in counts.items() if count >= threshold}
 
     cleaned: list[str] = []
     for page in pages:
-        kept = [
-            line
-            for line in page.splitlines()
-            if line.strip()
-            and line.strip() not in furniture
-            and not _PAGE_NUMBER.match(line.strip())
-        ]
+        kept: list[str] = []
+        for raw in page.splitlines():
+            line = raw.strip()
+            # Compared in the same normalised form the counts were built from,
+            # or a footer whose page number changes would never match itself.
+            if not line or _DIGITS.sub("#", line) in furniture:
+                continue
+            if _PAGE_NUMBER.match(line) or _DOT_LEADER.search(line):
+                continue
+            kept.append(_undouble(line))
         cleaned.append("\n".join(kept))
     return cleaned
 

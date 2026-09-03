@@ -12,11 +12,11 @@ index where every document carries the same tier.
 |---|---|---|---|---|---|
 | ATT&CK (M1) | 1757 | 20751 | 50.8% | CLEAR | AUTHORITATIVE |
 | NVD CVE | 5170 | 17301 | 42.3% | CLEAR | AUTHORITATIVE |
-| Vendor reports | 10 | 2768 | 6.8% | CLEAR | **VENDOR** |
+| Vendor reports | 10 | 2729 | 6.7% | CLEAR | **VENDOR** |
 | Internal notes (M2) | 16 | 34 | 0.1% | GREEN/AMBER/RED | VENDOR/COMMUNITY |
-| **total** | **6953** | **40854** | | | |
+| **total** | **6953** | **40815** | | | |
 
-The index went from 20785 to 40854 chunks: **it very nearly doubled.**
+The index went from 20785 to 40815 chunks: **it very nearly doubled.**
 
 ### CVE selection
 
@@ -53,20 +53,27 @@ thing that makes these numbers comparable at all.
 
 | metric | M1 (recursive, ATT&CK only) | M3 (all corpora) | change |
 |---|---|---|---|
-| recall@5 | 0.1641 | 0.1614 | −1.6% |
-| recall@10 | 0.2629 | 0.2539 | −3.4% |
-| MRR@10 | 0.3430 | 0.3367 | −1.8% |
-| nDCG@10 | 0.2288 | 0.2231 | −2.5% |
-| precision@10 | 0.1568 | 0.1527 | −2.6% |
-| hit@10 | 0.660 | 0.635 | −3.8% |
+| recall@5 | 0.1641 | 0.1631 | −0.6% |
+| recall@10 | 0.2629 | 0.2546 | −3.2% |
+| MRR@10 | 0.3430 | 0.3372 | −1.7% |
+| nDCG@10 | 0.2288 | 0.2236 | −2.3% |
+| precision@10 | 0.1568 | 0.1530 | −2.4% |
+| hit@10 | 0.660 | 0.640 | −3.0% |
 
-Full M3 figures: at k=5, recall 0.1614, precision 0.1752, MRR 0.3133, nDCG
-0.1814, hit 0.490. At k=10, recall 0.2539, precision 0.1527, MRR 0.3367, nDCG
-0.2231, hit 0.635.
+Full M3 figures: at k=5, recall 0.1631, precision 0.1764, MRR 0.3133, nDCG
+0.1824, hit 0.490. At k=10, recall 0.2546, precision 0.1530, MRR 0.3372, nDCG
+0.2236, hit 0.640.
+
+These are the numbers after the PDF cleaning fixes described below. Before them
+the same evaluation gave recall@5 0.1614 and recall@10 0.2539, so removing
+extraction junk from 6.7% of the index moved recall@5 by 0.0017. Small, in the
+direction cleaner text should move it, and well inside what 200 queries can
+resolve -- recorded because a fix that changed nothing measurable is worth
+knowing about too.
 
 ### Reading this
 
-**Doubling the index cost between 1.6% and 3.8% relative.** That is far less
+**Doubling the index cost between 0.6% and 3.2% relative.** That is far less
 than expected. 20,000 new chunks now compete for the same five slots, and the
 gold answers were displaced from about one query in twenty-six at k=10.
 
@@ -144,6 +151,16 @@ it that did not exist before M3.
 
 ## Carried forward
 
+* **Multi-column PDFs still interleave.** Talos's report is laid out in
+  columns and `pdfplumber` reads across them, so sentences from adjacent
+  columns are spliced together mid-clause. Three cheaper artifacts were fixed
+  once a spot check of the extracted text exposed them: headings arrived
+  character-doubled (`TTHHRREEAATT`) because faux-bold is drawn twice, contents
+  pages survived as dot leaders, and running feet whose page number changes
+  defeated exact-match furniture detection. Column interleaving needs real
+  layout analysis and is not fixed. It degrades a minority of one report rather
+  than corrupting a corpus, and the extraction floor still catches the failure
+  that matters -- a PDF with no recoverable text at all.
 * **Chunk-level duplicates crowd top-k.** `T1053.005` occupied four of five
   slots in one probe. Scoring collapses chunks to their document so the metrics
   are unaffected, but generation wastes its context window on repeats. A

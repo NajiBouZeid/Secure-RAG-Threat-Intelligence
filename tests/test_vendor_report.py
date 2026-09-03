@@ -260,3 +260,44 @@ def test_downloads_identify_the_project(tmp_path: Path, monkeypatch: pytest.Monk
 
     assert seen["User-Agent"] == base.USER_AGENT
     assert "httpx" not in seen["User-Agent"]
+
+
+def test_doubled_heading_characters_are_collapsed() -> None:
+    """pdfplumber renders faux-bold twice: "THREAT" arrives as "TTHHRREEAATT"."""
+    body = clean(
+        ["TTHHRREEAATT DDEETTEECCTTIIOONN\nOrdinary prose follows here.", "Page two text."]
+    )
+
+    assert "THREAT DETECTION" in body
+    assert "TTHHRREEAATT" not in body
+
+
+def test_ordinary_prose_with_double_letters_survives() -> None:
+    """The collapse must never touch "coffee", "HTTP" or "successfully"."""
+    line = "The committee successfully assessed all HTTP traffic."
+    body = clean([line, "Second page."])
+
+    assert line in body
+
+
+def test_table_of_contents_leaders_are_dropped() -> None:
+    pages = ["Email threats ....................... 26\nReal analysis begins here.", "Page two."]
+
+    body = clean(pages)
+
+    assert "Email threats" not in body
+    assert "Real analysis begins here." in body
+
+
+def test_footers_differing_only_by_page_number_are_furniture() -> None:
+    """Exact matching misses these, because the number changes on every page."""
+    pages = [
+        "Content one.\n(c) 2026 Cisco and/or its affiliates. talosintelligence.com page 2",
+        "Content two.\n(c) 2026 Cisco and/or its affiliates. talosintelligence.com page 3",
+        "Content three.\n(c) 2026 Cisco and/or its affiliates. talosintelligence.com page 4",
+    ]
+
+    body = clean(pages)
+
+    assert "talosintelligence.com" not in body
+    assert "Content two." in body
