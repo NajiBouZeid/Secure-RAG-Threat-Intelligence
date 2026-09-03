@@ -37,6 +37,7 @@ reports:
     url: https://info.zscaler.com/rs/306-ZEJ-256/images/2026-ThreatDetectionReport_Guide_RedCanary.pdf
     via: publisher
     filename: redcanary-threat-detection-report-2026.pdf
+    sha256: e2c35e2e3f0b8e4b68e73dad4c28ff8c8684ace878fe6d228d7068800e604a25
 
   - id: RC-TDR-2025
     title: Threat Detection Report 2025
@@ -45,15 +46,21 @@ reports:
     url: https://info.zscaler.com/rs/306-ZEJ-256/images/2025ThreatDetectionReport_Guide_RedCanary.pdf
     via: publisher
     filename: redcanary-threat-detection-report-2025.pdf
+    sha256: b73dad59b90c7b674ba6dd1b897b34d7be46431affa08a6b0a1b271678876dd8
 
-  - id: SOPHOS-AAR-2025
-    title: "It Takes Two: The 2025 Sophos Active Adversary Report"
+  - id: SOPHOS-AAR-2026
+    title: Sophos Active Adversary Report 2026
     publisher: Sophos
-    published: "2025-04"
-    # Sophos publishes the PDF itself on GitHub alongside the case data.
-    url: https://raw.githubusercontent.com/sophoslabs/Active_Adversary_Report/main/It%20Takes%20Two%20--%202025%20Sophos%20Active%20Adversary%20Report.pdf
-    via: publisher
-    filename: sophos-active-adversary-report-2025.pdf
+    published: "2026-02"
+    # The 2025 edition Sophos publishes on its own GitHub is entirely
+    # rasterised -- 70-100 images per page and zero extractable characters --
+    # so extract() rejects it and no OCR-shaped workaround is worth the
+    # transcription errors it would put into the index. The 2026 edition
+    # carries real text, at the cost of coming from a mirror.
+    url: https://raw.githubusercontent.com/jacobdjwilson/awesome-annual-security-reports/main/Annual%20Security%20Reports/2026/Sophos-Active-Adversary-Report-2026.pdf
+    via: mirror
+    filename: sophos-active-adversary-report-2026.pdf
+    sha256: b00c50f0ea641fca6076d331ef1db9ccf512d6ca00cec5dce16457a80dc1a200
 
   - id: TALOS-YIR-2025
     title: Cisco Talos 2025 Year in Review
@@ -62,6 +69,7 @@ reports:
     url: https://blog.talosintelligence.com/content/files/2026/03/2025YiR-report.pdf
     via: publisher
     filename: talos-year-in-review-2025.pdf
+    sha256: 526b3836ba1cc52d26626ae51509764a702b266e22f46445d5cc0d030b03a333
 
   - id: MANDIANT-MTRENDS-2025
     title: M-Trends 2025
@@ -70,6 +78,7 @@ reports:
     url: https://services.google.com/fh/files/misc/m-trends-2025-en.pdf
     via: publisher
     filename: mandiant-m-trends-2025.pdf
+    sha256: 2a23c52391419cb4b02de153b69d245ad8481010993f024e7e17233059475441
 
   - id: MANDIANT-MTRENDS-2026-EXEC
     title: M-Trends 2026 Executive Edition
@@ -80,6 +89,7 @@ reports:
     url: https://services.google.com/fh/files/misc/m-trends-2026-executive-edition-en.pdf
     via: publisher
     filename: mandiant-m-trends-2026-executive.pdf
+    sha256: 80ecbed1a162cc9d20efda446c4f2bb379c82b4a2902d508c095b44346a7d5e5
 
   - id: CROWDSTRIKE-GTR-2025
     title: 2025 Global Threat Report
@@ -88,6 +98,7 @@ reports:
     url: https://go.crowdstrike.com/rs/281-OBQ-266/images/CrowdStrikeGlobalThreatReport2025.pdf
     via: publisher
     filename: crowdstrike-global-threat-report-2025.pdf
+    sha256: 0150875f632a669929c2e04840ea01efa1b0f13f9ac9c4da2c2f45c51f737f06
 
   - id: UNIT42-GIRR-2026
     title: 2026 Unit 42 Global Incident Response Report
@@ -96,6 +107,7 @@ reports:
     url: https://start.paloaltonetworks.com/rs/531-OCS-018/images/Unit42-Global-Incident-Response-Report.pdf
     via: publisher
     filename: unit42-global-incident-response-report-2026.pdf
+    sha256: afee6c050ecd1f59014c60071b8f08596843240b7cdcad56c33ac9d05f1d9998
 
   - id: IBM-XFORCE-TII-2026
     title: X-Force Threat Intelligence Index 2026
@@ -105,6 +117,7 @@ reports:
     url: https://raw.githubusercontent.com/jacobdjwilson/awesome-annual-security-reports/main/Annual%20Security%20Reports/2026/IBM-X-Force-Threat-Intelligence-Index-2026.pdf
     via: mirror
     filename: ibm-xforce-threat-intelligence-index-2026.pdf
+    sha256: 2257899666905281f593858e17fa5df2860eaac980f466ddd47bfecdb35bbece
 
   - id: DRAGOS-YIR-2026
     title: 2026 OT Cybersecurity Report - A Year in Review
@@ -114,3 +127,4 @@ reports:
     url: https://raw.githubusercontent.com/jacobdjwilson/awesome-annual-security-reports/main/Annual%20Security%20Reports/2026/Dragos-OT-Cybersecurity-Report-A-Year-in-Review-2026.pdf
     via: mirror
     filename: dragos-ot-cybersecurity-year-in-review-2026.pdf
+    sha256: 1aa55b2b7e4b591379b5c0bc17f72a5883b314ac4424f3136a7b21ee907e6e85
