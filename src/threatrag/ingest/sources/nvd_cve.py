@@ -225,6 +225,14 @@ class NvdCveSource:
         self._window_months = window_months
         self._severities = list(severities)
         self._recent_limit = recent_limit
+        # Set by fetch(). Reported by the CLI rather than returned, so this
+        # source still satisfies the DocumentSource protocol.
+        self.selected = 0
+
+    @property
+    def client(self) -> NvdClient:
+        """Exposed so the CLI can report the rate limit actually in force."""
+        return self._client
 
     def _select(self, *, force: bool = False) -> Iterator[dict[str, Any]]:
         """Every selected record, ATT&CK-linked first, then newest-first by window.
@@ -263,14 +271,14 @@ class NvdCveSource:
                     taken += 1
                     yield record
 
-    def fetch(self, *, force: bool = False) -> int:
-        """Populate the cache. Returns how many records were selected.
+    def fetch(self, *, force: bool = False) -> None:
+        """Populate the cache, recording the selection size in ``selected``.
 
         ``force`` re-requests everything instead of reading the cache, which is
         how a stale corpus is refreshed. It costs the full request budget, so
         it is never the default.
         """
-        return sum(1 for _ in self._select(force=force))
+        self.selected = sum(1 for _ in self._select(force=force))
 
     def load(self) -> Iterator[Document]:
         """Re-runs selection against the cache, so this costs no requests."""

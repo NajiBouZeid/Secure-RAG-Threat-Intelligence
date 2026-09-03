@@ -298,11 +298,11 @@ def test_load_after_fetch_costs_no_requests(tmp_path: Path) -> None:
         client, window_end=datetime(2026, 9, 1), window_months=4, severities=["CRITICAL"]
     )
 
-    selected = source.fetch()
+    source.fetch()
     made = client.requests_made
     documents = list(source.load())
 
-    assert selected == 1
+    assert source.selected == 1
     assert len(documents) == 1
     assert client.requests_made == made
 

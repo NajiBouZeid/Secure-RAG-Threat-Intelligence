@@ -22,6 +22,7 @@ from threatrag.domain.models import TLP, Principal
 from threatrag.eval import goldset as goldset_module
 from threatrag.eval.metrics import aggregate, score_query
 from threatrag.ingest.pipeline import IngestStats
+from threatrag.ingest.sources.nvd_api import NVD_ATTRIBUTION
 
 # Citations carry an em dash, and a Windows console defaults to cp1252, which
 # renders it as a replacement character. errors="replace" keeps a legacy console
@@ -44,21 +45,56 @@ def _config(config: Path | None, overlay: Path | None = None) -> Config:
     return load_config(config, overlay)
 
 
+FETCHABLE = ("attack", "nvd", "all")
+
+
+def _fetch_attack(cfg: Config, force: bool) -> None:
+    source = factory.build_attack_source(cfg)
+    source.fetch(force=force)
+    size_mb = source.path.stat().st_size / 1e6
+    console.print(f"[green]OK[/] {source.path} ({size_mb:.1f} MB)")
+
+
+def _fetch_nvd(cfg: Config, force: bool) -> None:
+    source = factory.build_nvd_source(cfg)
+    client = source.client
+
+    # Says whether a key is in use, never what it is.
+    console.print(client.describe())
+    console.print(NVD_ATTRIBUTION, style="dim")
+    if not client.has_key:
+        console.print(
+            "[yellow]No NVD_API_KEY set.[/] The fetch will run at the public rate "
+            "limit; add a key to .env to go faster. It is resumable either way.",
+        )
+
+    with console.status("Fetching CVEs (cached responses cost no requests)..."):
+        source.fetch(force=force)
+
+    console.print(
+        f"[green]OK[/] {source.selected} CVEs selected, {client.requests_made} requests made"
+    )
+
+
 @app.command()
 def fetch(
-    corpus: Annotated[str, typer.Argument(help="Corpus to download: attack")] = "attack",
+    corpus: Annotated[
+        str, typer.Argument(help=f"Corpus to download: {', '.join(FETCHABLE)}")
+    ] = "attack",
     config: ConfigOption = None,
     force: Annotated[bool, typer.Option("--force", help="Re-download even if cached.")] = False,
 ) -> None:
     """Download raw corpora into the data directory."""
     cfg = _config(config)
-    if corpus != "attack":
-        raise typer.BadParameter(f"Unknown corpus {corpus!r} (available: attack)")
+    if corpus not in FETCHABLE:
+        raise typer.BadParameter(f"Unknown corpus {corpus!r} (available: {', '.join(FETCHABLE)})")
 
-    source = factory.build_attack_source(cfg)
-    source.fetch(force=force)
-    size_mb = source.path.stat().st_size / 1e6
-    console.print(f"[green]OK[/] {source.path} ({size_mb:.1f} MB)")
+    # ATT&CK first when fetching everything: the CVE selection reads its
+    # cross-links out of the bundle, so it has to be on disk already.
+    if corpus in ("attack", "all"):
+        _fetch_attack(cfg, force)
+    if corpus in ("nvd", "all"):
+        _fetch_nvd(cfg, force)
 
 
 @app.command()

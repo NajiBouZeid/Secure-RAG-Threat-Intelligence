@@ -13,8 +13,8 @@ up:  ## Start Qdrant (and the API) via docker compose
 down:  ## Stop the stack
 	docker compose down
 
-fetch:  ## Download raw corpora into data/raw
-	$(PY) -m threatrag.cli fetch attack
+fetch:  ## Download raw corpora into data/raw (ATT&CK, then NVD)
+	$(PY) -m threatrag.cli fetch all
 
 ingest:  ## Parse, chunk, embed and index the corpora
 	$(PY) -m threatrag.cli ingest

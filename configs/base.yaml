@@ -78,7 +78,17 @@ sources:
     enabled: true
     path: corpora/internal_notes.yaml
   nvd_cve:
-    enabled: false
+    enabled: true
+    # Two passes: every CVE ATT&CK discusses, then a bounded recent slice.
+    include_attack_linked: true
+    # Fixed, never now(). A window anchored to the current date would change
+    # the corpus between runs and quietly break comparability with M1 and M2.
+    # Raising recent_limit later re-fetches only the delta; record the new cap
+    # and re-run eval-retrieval alongside it.
+    window_end: "2026-09-01"
+    window_months: 18
+    severities: [CRITICAL, HIGH]
+    recent_limit: 5000
   vendor_report:
     enabled: false
 

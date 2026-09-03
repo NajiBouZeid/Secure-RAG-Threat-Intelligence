@@ -8,7 +8,9 @@ what lets the Phase 3 benchmark sweep configurations instead of forking scripts.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
+from datetime import datetime
 
 from threatrag.config import Config
 from threatrag.domain.ports import Chunker, DocumentSource, Embedder, Generator, VectorStore
@@ -18,6 +20,8 @@ from threatrag.ingest.chunking import build_chunker
 from threatrag.ingest.pipeline import IngestPipeline
 from threatrag.ingest.sources.attack_cti import AttackCtiSource
 from threatrag.ingest.sources.internal_notes import InternalNotesSource
+from threatrag.ingest.sources.nvd_api import NvdClient
+from threatrag.ingest.sources.nvd_cve import NvdCveSource
 from threatrag.rag.generators.ollama import OllamaGenerator
 from threatrag.rag.pipeline import AnswerPipeline
 from threatrag.rag.retriever import Retriever
@@ -73,6 +77,33 @@ def build_internal_notes_source(config: Config) -> InternalNotesSource:
     return InternalNotesSource(path) if path else InternalNotesSource()
 
 
+def build_nvd_source(config: Config) -> NvdCveSource:
+    """The CVE corpus, with its ATT&CK cross-links resolved.
+
+    The key is read from the environment and never from the config file, which
+    is committed. Absent, the client throttles to the public rate limit and
+    everything else behaves identically.
+    """
+    spec = config.sources.get("nvd_cve", {})
+    client = NvdClient(config.paths.raw_dir / "nvd", api_key=os.getenv("NVD_API_KEY"))
+
+    links: dict[str, list[str]] = {}
+    if spec.get("include_attack_linked", True):
+        # Needs the ATT&CK bundle on disk. Fetching CVEs without it would
+        # silently drop the guaranteed-relevant half of the corpus, so let the
+        # missing-file error surface instead.
+        links = build_attack_source(config).cve_mentions()
+
+    return NvdCveSource(
+        client,
+        attack_links=links,
+        window_end=datetime.fromisoformat(str(spec.get("window_end", "2026-09-01"))),
+        window_months=int(spec.get("window_months", 18)),
+        severities=list(spec.get("severities", ["CRITICAL", "HIGH"])),
+        recent_limit=int(spec.get("recent_limit", 5000)),
+    )
+
+
 def build_sources(config: Config) -> list[DocumentSource]:
     """Every corpus the config marks enabled, in ingestion order.
 
@@ -82,6 +113,7 @@ def build_sources(config: Config) -> list[DocumentSource]:
     """
     builders: dict[str, Callable[[Config], DocumentSource]] = {
         "attack_cti": build_attack_source,
+        "nvd_cve": build_nvd_source,
         "internal_notes": build_internal_notes_source,
     }
     sources: list[DocumentSource] = []
