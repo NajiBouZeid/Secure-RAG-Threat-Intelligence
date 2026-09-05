@@ -26,6 +26,8 @@ from threatrag.ingest.sources.vendor_report import VendorReportSource
 from threatrag.rag.generators.ollama import OllamaGenerator
 from threatrag.rag.pipeline import AnswerPipeline
 from threatrag.rag.retriever import Retriever
+from threatrag.security.attacks.runner import AttackRunner
+from threatrag.security.attacks.sink import ExfiltrationSink
 
 
 def build_embedder(config: Config, name: str | None = None) -> Embedder:
@@ -154,6 +156,23 @@ def build_answer_pipeline(config: Config, embedder_name: str | None = None) -> A
         retriever=build_retriever(config, embedder_name),
         generator=build_generator(config),
         max_context_chars=config.generation.max_context_chars,
+    )
+
+
+def build_attack_runner(
+    config: Config, *, sink: ExfiltrationSink | None = None, embedder_name: str | None = None
+) -> AttackRunner:
+    """The M4 harness: an answer pipeline plus an ingest pipeline over one store.
+
+    Both pipelines share the store the real corpus lives in. The runner indexes a
+    poison document, runs the query, and deletes the poison again, so attacks
+    compete against the true corpus without leaving anything behind.
+    """
+    return AttackRunner(
+        pipeline=build_answer_pipeline(config, embedder_name),
+        ingest=build_pipeline(config, embedder_name),
+        store=build_store(config),
+        sink=sink,
     )
 
 

@@ -18,11 +18,13 @@ from rich.table import Table
 
 from threatrag import factory
 from threatrag.config import Config, load_config
-from threatrag.domain.models import TLP, Principal
+from threatrag.domain.models import TLP, Principal, SourceType
 from threatrag.eval import goldset as goldset_module
 from threatrag.eval.metrics import aggregate, score_query
 from threatrag.ingest.pipeline import IngestStats
 from threatrag.ingest.sources.nvd_api import NVD_ATTRIBUTION
+from threatrag.security.attacks.loader import DEFAULT_ATTACK_DIR, load_attacks
+from threatrag.security.attacks.sink import ExfiltrationSink
 
 # Citations carry an em dash, and a Windows console defaults to cp1252, which
 # renders it as a replacement character. errors="replace" keeps a legacy console
@@ -294,6 +296,95 @@ def status(config: ConfigOption = None) -> None:
     cfg = _config(config)
     store = factory.build_store(cfg)
     console.print(f"collection [bold]{cfg.vector_store.collection}[/]: {store.count()} chunks")
+
+
+attack_app = typer.Typer(
+    add_completion=False, help="Run the M4 adversarial corpus against the pipeline."
+)
+app.add_typer(attack_app, name="attack")
+
+
+@attack_app.command("list")
+def attack_list(
+    directory: Annotated[
+        Path, typer.Option("--dir", help="Attack corpus directory.")
+    ] = DEFAULT_ATTACK_DIR,
+) -> None:
+    """List the attacks in the corpus without running them."""
+    attacks = load_attacks(directory)
+    table = Table(title=f"{len(attacks)} attacks in {directory}")
+    table.add_column("id")
+    table.add_column("family")
+    table.add_column("target query")
+    for attack in attacks:
+        table.add_row(attack.id, attack.family.value, attack.target_query)
+    console.print(table)
+
+
+@attack_app.command("run")
+def attack_run(
+    attack_id: Annotated[
+        str | None, typer.Argument(help="Run one attack by id; default is all.")
+    ] = None,
+    config: ConfigOption = None,
+    overlay: OverlayOption = None,
+    directory: Annotated[
+        Path, typer.Option("--dir", help="Attack corpus directory.")
+    ] = DEFAULT_ATTACK_DIR,
+) -> None:
+    """Run attacks against the live index and report which landed.
+
+    Needs Qdrant and the generator running: each attack indexes a poison
+    document, runs its query, and removes the poison again.
+    """
+    cfg = _config(config, overlay)
+    attacks = load_attacks(directory)
+    if attack_id is not None:
+        attacks = [a for a in attacks if a.id == attack_id]
+        if not attacks:
+            raise typer.BadParameter(f"No attack with id {attack_id!r}")
+
+    # The sink is loopback-only and inert unless an exfiltration beacon fires at
+    # it; it is held open for the whole batch so its port is stable across runs.
+    with ExfiltrationSink() as sink:
+        runner = factory.build_attack_runner(cfg, sink=sink)
+        console.print(f"exfiltration sink listening on [dim]{sink.base_url}[/]")
+
+        results = []
+        with console.status("Running attacks..."):
+            for attack in attacks:
+                results.append(runner.run(attack))
+
+    table = Table(title="Attack results")
+    table.add_column("id")
+    table.add_column("family")
+    table.add_column("result")
+    for result in results:
+        verdict = "[red]LANDED[/]" if result.succeeded else "[green]blocked[/]"
+        table.add_row(result.attack_id, result.family.value, verdict)
+    console.print(table)
+
+    for result in results:
+        console.print(f"\n[bold]{result.attack_id}[/] — {result.target_query}")
+        for criterion in result.criteria:
+            mark = "[red]x[/]" if criterion.passed else "[green].[/]"
+            console.print(f"  {mark} {criterion.detail}")
+
+    landed = sum(1 for r in results if r.succeeded)
+    console.print(f"\n[bold]{landed}/{len(results)}[/] attacks landed against the baseline.")
+
+
+@attack_app.command("clean")
+def attack_clean(config: ConfigOption = None) -> None:
+    """Remove any leftover attack documents from the collection.
+
+    A safety net: the runner already deletes its poison in a finally block, so
+    this only matters after a hard-killed run.
+    """
+    cfg = _config(config)
+    store = factory.build_store(cfg)
+    removed = store.delete_by_source_type(SourceType.SYNTHETIC_ADVERSARIAL.value)
+    console.print(f"[yellow]removed[/] {removed} synthetic-adversarial chunks")
 
 
 if __name__ == "__main__":
