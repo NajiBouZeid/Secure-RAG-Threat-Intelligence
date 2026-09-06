@@ -637,6 +637,9 @@ def invert_reidentify(
         dump.write_text(
             json.dumps(report.model_dump(mode="json"), indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
+            # Default translation writes CRLF on Windows, and git then warns on
+            # every commit of a file that is meant to be a stable artefact.
+            newline="\n",
         )
         console.print(f"wrote {len(report.rows)} rows to [bold]{dump}[/]")
 
