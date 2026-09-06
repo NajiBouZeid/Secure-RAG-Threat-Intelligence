@@ -94,14 +94,14 @@ def test_chunks_without_that_named_vector_are_reported_not_dropped_silently(
 
 
 def test_the_answer_key_keeps_the_text_and_the_secret_terms(tmp_path: Path) -> None:
-    chunks = [_chunk(0, text="TLP:RED payment approval matrix", tlp=TLP.RED)]
+    chunks = [_chunk(0, text="INT-0 TLP:RED 41 repositories payment approval matrix", tlp=TLP.RED)]
     store = VectorStub({chunks[0].id: np.ones(4, dtype=np.float32)})
 
     export_targets(store, _sample(chunks), vector_name="gtr-base", out_dir=tmp_path)
 
     truth = load_truth(tmp_path / TRUTH_FILE)
     record = truth[chunks[0].id]
-    assert record["text"] == "TLP:RED payment approval matrix"
+    assert record["text"] == "INT-0 TLP:RED 41 repositories payment approval matrix"
     assert record["tlp"] == "red"
     assert record["secret_terms"] == ["INT-0", "41 repositories"]
 

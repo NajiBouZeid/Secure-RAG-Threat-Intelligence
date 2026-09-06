@@ -150,10 +150,25 @@ def secret_terms(chunk: Chunk) -> list[str]:
     Reconstruction quality and disclosure are different questions: a paraphrase
     scoring well on BLEU may leak nothing, while a mangled sentence that still
     names the actor and the CVE leaks everything that mattered.
+
+    Two rules keep the number meaningful, both learned by getting it wrong.
+
+    Declared terms are scoped to the chunk that actually contains them. They are
+    carried on the *document*, so without this filter a chunk would be scored on
+    secrets it never held -- chunk 3 of an incident report marked down for
+    failing to disclose a hostname that only ever appeared in chunk 1.
+
+    The source reference counts only when the text carries it. For a public
+    corpus that identifier is the subject and recovering it is a real signal,
+    but for an internal note it is a filing number: scoring it as the secret is
+    what made M5's first inversion run report zero leakage from reconstructions
+    that plainly leaked the technique and the hostname.
     """
-    terms: list[str] = [chunk.source_ref]
+    declared: list[str] = [chunk.source_ref]
     metadata: Iterable[tuple[str, str | list[str]]] = chunk.metadata.items()
     for key, value in metadata:
         if key in {"secret_terms", "indicators", "actors"}:
-            terms.extend([value] if isinstance(value, str) else value)
-    return [term for term in dict.fromkeys(terms) if term]
+            declared.extend([value] if isinstance(value, str) else value)
+
+    haystack = chunk.text.lower()
+    return [term for term in dict.fromkeys(declared) if term and term.lower() in haystack]

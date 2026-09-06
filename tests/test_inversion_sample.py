@@ -119,7 +119,36 @@ def test_allocation_never_exceeds_a_corpus_that_is_too_small() -> None:
 
 def test_secret_terms_include_the_reference_and_declared_indicators() -> None:
     chunk = _chunk(1, SourceType.INTERNAL_NOTE).model_copy(
-        update={"metadata": {"secret_terms": ["41 repositories", "beacon.exe"]}}
+        update={
+            "text": "REF-1 review found 41 repositories cloned by beacon.exe",
+            "metadata": {"secret_terms": ["41 repositories", "beacon.exe"]},
+        }
     )
 
     assert secret_terms(chunk) == ["REF-1", "41 repositories", "beacon.exe"]
+
+
+def test_secret_terms_are_scoped_to_the_chunk_that_holds_them() -> None:
+    """Terms are declared on the document, so a later chunk would otherwise be
+    marked down for failing to leak a hostname it never contained."""
+    chunk = _chunk(1, SourceType.INTERNAL_NOTE).model_copy(
+        update={
+            "text": "Assessment section mentioning nothing sensitive",
+            "metadata": {"secret_terms": ["TREAS-W7734", "payment approval matrix"]},
+        }
+    )
+
+    assert secret_terms(chunk) == []
+
+
+def test_a_note_identifier_is_not_treated_as_the_secret() -> None:
+    """For an internal note the reference is a filing number, not the content.
+    Counting it made M5's first run report zero leakage from text that leaked."""
+    chunk = _chunk(1, SourceType.INTERNAL_NOTE).model_copy(
+        update={
+            "text": "The actor obtained a handle to LSASS on the finance pool",
+            "metadata": {"secret_terms": ["LSASS"]},
+        }
+    )
+
+    assert secret_terms(chunk) == ["LSASS"]

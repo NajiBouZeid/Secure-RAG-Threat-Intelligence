@@ -21,6 +21,7 @@ notes:
     tlp: amber
     trust_tier: 1
     techniques: [T1003, T1003.001, T1078]
+    secret_terms: ["Ke3chang", "LSASS", "finance virtual desktop", "eleven hosts"]
     text: |
       ## Summary
       Between 2026-02-11 and 2026-02-19 we observed credential dumping attempts
@@ -45,6 +46,7 @@ notes:
     tlp: red
     trust_tier: 1
     techniques: [T1566.001, T1055, T1041]
+    secret_terms: ["TREAS-W7734", "payment approval matrix", "treasury", "Spearphishing attachment"]
     text: |
       ## Scope
       Single workstation, TREAS-W7734, belonging to a treasury operations role
@@ -69,6 +71,7 @@ notes:
     tlp: amber
     trust_tier: 1
     techniques: [T1003.001]
+    secret_terms: ["DR-0412", "lsass.exe", "PROCESS_VM_READ", "600 second"]
     text: |
       ## Logic
       Fires when a process not on the allowlist opens a handle to lsass.exe with
@@ -92,6 +95,7 @@ notes:
     tlp: red
     trust_tier: 1
     techniques: [T1190]
+    secret_terms: ["partner portal", "refresh token", "authentication bypass", "organisation identifier"]
     text: |
       ## Finding
       The partner portal's session refresh endpoint accepts a refresh token
@@ -114,6 +118,7 @@ notes:
     tlp: amber
     trust_tier: 1
     techniques: [T1071.001, T1573]
+    secret_terms: ["198.51.100.47", "198.51.100.62", "203.0.113.19", "43 seconds"]
     text: |
       ## Infrastructure
       Three beacon destinations were recovered from memory on the affected VDI
@@ -137,6 +142,7 @@ notes:
     tlp: green
     trust_tier: 1
     techniques: [T1486, T1490, T1489]
+    secret_terms: ["nineteen days", "backup agents", "ransomware"]
     text: |
       ## Source
       Quarterly briefing from an external intelligence provider, delivered
@@ -158,6 +164,7 @@ notes:
     tlp: green
     trust_tier: 1
     techniques: [T1566, T1583.001]
+    secret_terms: ["credential harvesting", "password strength meter", "stylesheet"]
     text: |
       ## Observed
       Four domains registered this week combine our brand name with the words
@@ -176,6 +183,7 @@ notes:
     tlp: red
     trust_tier: 1
     techniques: [T1530, T1078.004]
+    secret_terms: ["41 repositories", "platform engineer", "managed device"]
     text: |
       ## Context
       A platform engineer serving notice accessed 41 repositories in their final
@@ -197,6 +205,7 @@ notes:
     tlp: amber
     trust_tier: 2
     techniques: [T1133]
+    secret_terms: ["VPN concentrator", "login banner", "firmware"]
     text: |
       ## Claim
       A post on a criminal forum offers "persistent VPN access to a mid-size
@@ -219,6 +228,7 @@ notes:
     tlp: amber
     trust_tier: 1
     techniques: [T1059.001, T1105, T1218]
+    secret_terms: ["certutil", "build agents", "scheduled task", "service account"]
     text: |
       ## Observation
       Signed Windows binaries were used to stage tooling on four build agents:
@@ -241,6 +251,7 @@ notes:
     tlp: amber
     trust_tier: 1
     techniques: [T1562.008, T1530]
+    secret_terms: ["actuarial extracts", "object-level read logging", "fourteen months", "six storage buckets"]
     text: |
       ## Gap
       Object-level read logging was never enabled on six storage buckets,
@@ -261,6 +272,7 @@ notes:
     tlp: green
     trust_tier: 1
     techniques: [T1204]
+    secret_terms: ["prompt injection", "retrieval assistant", "vendor reports"]
     text: |
       ## Concern
       The retrieval assistant ingests vendor reports and community feeds. A
@@ -278,6 +290,7 @@ notes:
     tlp: red
     trust_tier: 1
     techniques: [T1027, T1547.001]
+    secret_terms: ["AURK0", "alternate data stream", "machine GUID", "43 seconds"]
     text: |
       ## Configuration
       The implant stored its configuration in an alternate data stream on a
@@ -299,6 +312,7 @@ notes:
     tlp: amber
     trust_tier: 1
     techniques: [T1486, T1489]
+    secret_terms: ["claims platform", "eleven hours", "restore runbook", "identity provider"]
     text: |
       ## Exercise
       Two hour tabletop, 2026-02-14, simulating encryption of the claims
@@ -319,6 +333,7 @@ notes:
     tlp: amber
     trust_tier: 2
     techniques: [T1071]
+    secret_terms: ["812 IP addresses", "state actors", "shared egress"]
     text: |
       ## Content
       A community indicator list circulated on a public channel, containing 812
@@ -339,6 +354,7 @@ notes:
     tlp: red
     trust_tier: 1
     techniques: [T1199]
+    secret_terms: ["payroll processor", "4,100", "bank detail fragments"]
     text: |
       ## Notification
       Our payroll processor notified us on 2026-02-25 of unauthorised access to

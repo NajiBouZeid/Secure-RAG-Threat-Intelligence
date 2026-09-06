@@ -79,6 +79,12 @@ class InternalNotesSource:
             raise ValueError(f"Internal note {note.get('id', '?')} is missing {exc}") from exc
 
         techniques = [str(item) for item in note.get("techniques", [])]
+        # The strings whose appearance in a reconstructed or exfiltrated answer
+        # counts as a real disclosure. Declared per note rather than inferred,
+        # because only the author knows which phrase is the sensitive one -- the
+        # note identifier is not, and defaulting to it made M5's inversion score
+        # report zero leakage from text that plainly leaked.
+        secrets = [str(item) for item in note.get("secret_terms", [])]
         return Document(
             id=f"internal:{note_id}",
             title=f"{note_id} {title}",
@@ -88,5 +94,9 @@ class InternalNotesSource:
             url=None,
             tlp=tlp,
             trust_tier=trust_tier,
-            metadata={"techniques": techniques, "synthetic": "true"},
+            metadata={
+                "techniques": techniques,
+                "secret_terms": secrets,
+                "synthetic": "true",
+            },
         )
