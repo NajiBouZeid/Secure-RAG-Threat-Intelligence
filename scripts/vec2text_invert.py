@@ -1,27 +1,49 @@
-"""Reconstruct text from stolen GTR vectors. Runs off this machine, on a GPU.
+"""Reconstruct text from stolen GTR vectors. Needs a GPU and its own venv.
 
-Why it is a loose script and not a package module: vec2text is pinned against a
-transformers generation from 2024, and installing it into the project venv
-would put the working M1-M4 stack at the mercy of that resolution. It also
-needs a GPU in practice -- the corrector runs tens of forward passes per vector
-with beam search, which is minutes per vector on a CPU. So the inversion step
-runs in a disposable environment (a free Kaggle T4 is enough) and this repo
-keeps only the two ends: `threatrag invert prepare` produces the input,
-`threatrag invert score` consumes the output. Neither imports vec2text.
+Why it is a loose script and not a package module: vec2text is built against a
+2024 transformers and installing it beside the project would put the working
+M1-M5 stack at the mercy of that resolution. It also needs a GPU in practice --
+the corrector runs tens of forward passes per vector with beam search. So the
+repo keeps only the two ends, and neither imports vec2text: `threatrag invert
+prepare` produces the input, `threatrag invert score` consumes the output.
 
-Upload only what `prepare` names -- vectors.npy and vector_ids.json. The answer
-key stays on the machine that made it; sending it here would make the result
-circular.
+The M5 run that produced reports/m5_inversion.md used a local RTX 4060 through
+an isolated venv. Four things had to be worked around to get there, none of
+them about inversion, all of them recorded because none is obvious:
 
-On Kaggle, in a GPU notebook:
+    python -m venv .venv-inv
+    .venv-inv/Scripts/python -m pip install torch --index-url \\
+        https://download.pytorch.org/whl/cu128          # 2.86 GB, ~9 GB installed
 
-    !pip install -q vec2text
-    !python vec2text_invert.py --in /kaggle/input/<dataset> --out /kaggle/working
+    # rouge_score ships sdist-only and builds an invalid wheel name under
+    # modern setuptools, which fails the whole vec2text install.
+    .venv-inv/Scripts/python -m pip install setuptools wheel
+    .venv-inv/Scripts/python -m pip install rouge-score --no-build-isolation
+    .venv-inv/Scripts/python -m pip install vec2text
 
-vec2text declares no upper bound on transformers, so pip will install a current
-one and the break, if it comes, is at runtime rather than at resolution time.
-If generation raises, pin transformers down (4.44 is a version the corrector was
-exercised against) and restart the runtime.
+    # transformers 5 initialises models on a meta device, and vec2text's
+    # InversionModel.__init__ calls from_pretrained *inside* that context,
+    # which transformers 5 forbids outright. Pin the era it was written for.
+    .venv-inv/Scripts/python -m pip install "transformers==4.44.2" \\
+        "huggingface_hub<1.0" "tokenizers>=0.19,<0.20" \\
+        "sentence-transformers==3.0.1" "datasets<3" "accelerate<1.0"
+
+    .venv-inv/Scripts/python scripts/vec2text_invert.py \\
+        --in data/inversion --out data/inversion --batch 4
+
+The fourth is Windows-only and handled in code below: vec2text imports the
+Unix-only `resource` module at package import.
+
+Use `--batch 4`. Measured on an 8 GB card, batches of 16 and 32 run out of
+memory and 8 is *slower* than 4 -- the bottleneck is the sequential correction
+steps, so batching buys nothing and costs VRAM. Budget ~43 min per 334-vector
+bundle. Do not speed it up by lowering `--steps` or `--beam`: that changes what
+is measured and breaks comparability between bundles.
+
+A free cloud GPU works equally well; the script only needs `--in` to hold
+vectors.npy and vector_ids.json. If you run it somewhere else, send **only**
+those two files. The answer key stays on the machine that made it, because
+handing the reconstruction step the source text would make the result circular.
 
 A limitation to read before the numbers. The only public GTR corrector is
 `jxm/gtr__nq__32__correct`: trained on 32-token Natural Questions passages. The
@@ -29,9 +51,8 @@ chunks in this index are 512 characters, three to four times that. The attack
 is being run outside the distribution its corrector was fitted to, which is the
 honest position -- it is the corrector a real attacker would have -- but it
 means a weak reconstruction is evidence about the available tooling and not
-about GTR being hard to invert in principle. Measuring the attack on the length
-it was built for is a matter of exporting a truncated bundle from the machine
-that holds the text, not of changing anything here.
+about GTR being hard to invert in principle. `threatrag invert prepare` writes
+a 32-token control bundle alongside the main one for exactly this reason.
 """
 
 from __future__ import annotations
