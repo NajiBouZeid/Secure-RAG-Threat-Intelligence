@@ -156,6 +156,20 @@ def ingest(
     pipeline = factory.build_pipeline(cfg, embedder)
     store = factory.build_store(cfg)
 
+    # Qdrant replaces a point on upsert, so ingesting a populated collection
+    # under a second encoder writes points carrying only that encoder's vector
+    # and silently drops the primary one -- every earlier retrieval number with
+    # it. Adding a second encoder to an indexed corpus is `invert prepare`,
+    # which attaches vectors instead of replacing points.
+    if embedder is not None and embedder != cfg.embedding.primary and store.count() > 0:
+        raise typer.BadParameter(
+            f"Collection {cfg.vector_store.collection!r} already holds "
+            f"{store.count()} points indexed with {cfg.embedding.primary!r}. Ingesting "
+            f"it again with {embedder!r} would replace those points and drop the "
+            f"{cfg.embedding.primary!r} vectors. Use `threatrag invert prepare` to attach "
+            f"a second encoder's vectors, or point vector_store.collection somewhere else."
+        )
+
     stats = IngestStats()
     for source in sources:
         # Chunk ids are content-addressed, so re-ingesting with a different
