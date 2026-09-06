@@ -50,6 +50,9 @@ class EmbeddingModelConfig(BaseModel):
     model_id: str
     dim: int
     normalize: bool = True
+    # Only meaningful for the mean_pooled_encoder backend: the token budget the
+    # encoder sees. None means the model maximum.
+    max_tokens: int | None = None
 
 
 class EmbeddingConfig(BaseModel):

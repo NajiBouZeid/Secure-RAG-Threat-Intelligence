@@ -14,6 +14,7 @@ from datetime import datetime
 
 from threatrag.config import Config
 from threatrag.domain.ports import Chunker, DocumentSource, Embedder, Generator, VectorStore
+from threatrag.index.embedders.mean_pooled import MeanPooledEncoderEmbedder
 from threatrag.index.embedders.sentence_transformer import SentenceTransformerEmbedder
 from threatrag.index.qdrant_store import QdrantVectorStore
 from threatrag.ingest.chunking import build_chunker
@@ -30,13 +31,25 @@ from threatrag.security.attacks.runner import AttackRunner
 from threatrag.security.attacks.sink import ExfiltrationSink
 
 
-def build_embedder(config: Config, name: str | None = None) -> Embedder:
+def build_embedder(
+    config: Config, name: str | None = None, *, max_tokens: int | None = None
+) -> Embedder:
+    """Build an encoder. ``max_tokens`` overrides the config for one call, which
+    is how the inversion control bundle is embedded at the corrector's own
+    training length without declaring a second named vector."""
     key, spec = config.embedding.resolve(name)
-    if spec.backend != "sentence_transformers":
-        raise ValueError(f"Unsupported embedding backend {spec.backend!r}")
-    return SentenceTransformerEmbedder(
-        name=key, model_id=spec.model_id, dim=spec.dim, normalize=spec.normalize
-    )
+    if spec.backend == "sentence_transformers":
+        return SentenceTransformerEmbedder(
+            name=key, model_id=spec.model_id, dim=spec.dim, normalize=spec.normalize
+        )
+    if spec.backend == "mean_pooled_encoder":
+        return MeanPooledEncoderEmbedder(
+            name=key,
+            model_id=spec.model_id,
+            dim=spec.dim,
+            max_tokens=max_tokens if max_tokens is not None else spec.max_tokens,
+        )
+    raise ValueError(f"Unsupported embedding backend {spec.backend!r}")
 
 
 def build_store(config: Config) -> VectorStore:

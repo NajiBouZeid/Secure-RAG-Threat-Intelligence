@@ -17,10 +17,17 @@ embedding:
       dim: 384
       normalize: true
     gtr-base:
-      backend: sentence_transformers
+      # Deliberately NOT the sentence_transformers pipeline. The only public
+      # vec2text corrector was trained against raw encoder hidden states,
+      # masked-mean pooled and left unnormalised; sentence-transformers adds a
+      # 768->768 Dense projection and L2 normalisation on top, which yields a
+      # different vector of the same width. Inverting the wrong one returns
+      # fluent nonsense that reads exactly like a model resisting inversion.
+      backend: mean_pooled_encoder
       model_id: sentence-transformers/gtr-t5-base
       dim: 768
-      normalize: true
+      normalize: false
+      max_tokens: null        # model maximum; the 32-token control is a CLI flag
 
 chunking:
   # recursive, on evidence: it beat structural on every metric at k=5 and k=10
