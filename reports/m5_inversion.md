@@ -62,20 +62,57 @@ bundles. The split is a property of the experiment, not tidiness:
 Handing the reconstruction step the source text would make any rate it produced
 circular, so scoring happens locally against a key the inversion never sees.
 
-The reconstruction itself runs off this machine (`scripts/vec2text_invert.py`).
+The reconstruction runs in an isolated venv (`.venv-inv`, `scripts/vec2text_invert.py`).
 `vec2text` is pinned against a 2024 `transformers` and declares no upper bound,
-so installing it into this venv would resolve cleanly and then break
+so installing it beside the project would resolve cleanly and then break
 `sentence-transformers` at runtime — taking M1–M4 with it — and its corrector
 runs tens of forward passes per vector with beam search, which is minutes per
-vector on this machine's CPU-only torch. So the repo keeps the two ends and
-neither imports `vec2text`.
+vector on CPU. So the working stack keeps its own environment and imports no
+part of `vec2text`.
 
-**Read the result, when it lands, against this limitation.** The only public
-GTR corrector is `jxm/gtr__nq__32__correct`, trained on **32-token** Natural
-Questions passages. The chunks here are 512 characters — three to four times
-that. Running it anyway is the honest choice, because it is the corrector an
-attacker actually has, but it means a weak reconstruction is evidence about the
-state of public inversion tooling and *not* proof that GTR resists inversion.
+### The near-miss that would have invented a result
+
+The first export was in **the wrong vector space**, and nothing would have said
+so. The bundle was embedded with the `sentence-transformers` pipeline — mean
+pool, then a 768→768 Dense projection, then L2 normalisation. But
+`jxm/gtr__nq__32__correct` was trained against vec2text's own `gtr_base`
+embedder, which is `AutoModel(...).encoder` → `last_hidden_state` → masked
+mean, **and nothing else**.
+
+Same model id, same 768 dimensions, no error anywhere. Measured on the live
+model, the cosine between the two encodings of one sentence is **0.018** —
+effectively orthogonal. The corrector would have received noise and returned
+fluent nonsense, which is indistinguishable from an encoder that resists
+inversion. M5 would have published a false negative and called it a finding.
+
+`gtr-base` now resolves to a `MeanPooledEncoderEmbedder` that transcribes the
+reference recipe; checked against vec2text's own code on the live model,
+maximum absolute difference **0.0**. The retrieval encoder is untouched —
+`all-minilm` is still `sentence-transformers`, so no M1–M4 number moves.
+
+The general lesson is worth more than the fix: when an attack and a target are
+wired together only by a float array, every convention mismatch fails silently
+and in the direction of "the system is safe."
+
+### Two bundles, because a weak result has two causes
+
+The only public GTR corrector was trained on **32-token** Natural Questions
+passages, and these chunks are 512 characters — three to four times longer. So
+a weak reconstruction on the main bundle would be ambiguous between *the attack
+does not work* and *the text is longer than the attack was built for*, which
+mean opposite things for a defender.
+
+| bundle | vectors | measures |
+|---|---|---|
+| `data/inversion/` | full chunk, mean-pooled | the realistic attack on the index as it stands |
+| `data/inversion/control/` | first 32 tokens | the same attack at the length the corrector was fitted for — the upper bound |
+
+The control's answer key holds the *decoded 32-token prefix*, not the full
+chunk, and drops secret terms that fall past the budget: scoring a 32-token
+vector against 512 characters would mark the reconstruction wrong for omitting
+words its vector never carried. **The gap between the two is the finding** —
+if the control inverts well and the main bundle does not, then chunk length is
+itself doing the defending, which is a result M6 can act on.
 
 ## Attack 2 — re-identification (MiniLM): the corrector-free attack, run live
 
