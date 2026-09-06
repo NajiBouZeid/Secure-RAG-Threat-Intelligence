@@ -1,0 +1,3432 @@
+{
+  "rows": [
+    {
+      "chunk_id": "attack:G0034#4:6afb756d26a7",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4210526315789474,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:G0096#0:fc16bd5ea736",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:G0098#0:a5eac151b47b",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:G0115#5:b89493962a65",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:G1021#2:58b78ee44890",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:G1033#3:9ca99f26a1b1",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:G1042#1:a2f567537d8c",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:M1018#5:cc7a7c4285ce",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.918918918918919,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:M1019#6:9ea3bbd77b0e",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S0138#0:dc25fb34644d",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7999999999999999,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S0146#0:6c234ccca047",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.375,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S0331#0:9158ed73f951",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.75,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:S0352#0:524a79e284e8",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S0365#1:aa30f77ef97f",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:S0402#0:156179206346",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.45454545454545453,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S0436#0:8890476c2012",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S0482#0:bf604f2aa491",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7368421052631577,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S0597#5:db8c1f51d77c",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S0604#5:db8c1f51d77c",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S1048#2:d7aabbd9bacf",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:S1122#5:db8c1f51d77c",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S1145#1:12767fff75bd",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:S1182#0:b807870ba9ff",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8571428571428572,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:S1217#5:d8b161a4e540",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S1226#0:9cdbf9956b32",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.19999999999999998,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:S9002#4:db8c1f51d77c",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1001.002#6:033fed6eeb70",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4000000000000001,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1005#43:74c2d265bfee",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1008#29:5cae7180cdac",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1014#6:cf8e8d3da869",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1016#78:9e9d61e8f42e",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5263157894736842,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1018#18:c937de5ad5c1",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9473684210526316,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1021#1:75946d6a2c53",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7407407407407408,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1021.003#6:11ad2fa6ecfb",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1025#1:69f9a5d02a65",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.717948717948718,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:T1027.003#4:c4a49d1b1a5f",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1027.004#4:7d72141f4675",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.962962962962963,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1027.009#21:32c82db0132f",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.35294117647058826,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1027.016#10:cf8e8d3da869",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1027.016#8:6c187d1b3620",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1033#114:5c43aef54532",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8421052631578948,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1033#97:11bbb71af998",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8695652173913043,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1036.005#134:cdcecc12f1b3",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7058823529411765,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1036.011#10:ea934b0203d2",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1041#51:b0e747ae9f1b",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8333333333333334,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1053.005#36:30c4fa651706",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1053.005#90:c7935feff243",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.23529411764705882,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1055.008#4:a0ffeb9af7b4",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5714285714285714,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1055.012#6:8f595b53b1cd",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.23529411764705882,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1056.004#9:5e9c757299b0",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6875,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1057#101:f368343df879",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7368421052631577,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1057#124:4c846a77f84a",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.823529411764706,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1057#18:97f84de9a359",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8571428571428571,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1059.001#107:cfdc36d780f0",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9411764705882353,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1059.003#150:80c9a1223d04",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8888888888888888,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1070#14:710eb23b29ea",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7777777777777778,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1070.004#153:339a83f661cb",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8421052631578948,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1071.001#132:f798053298c9",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.823529411764706,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1071.001#175:ae1b3eb08af1",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7777777777777778,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1074.001#41:3b6a5b519994",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.47058823529411764,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1074.002#0:1665dbe520b0",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8000000000000002,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1078.003#9:24048bbb7041",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7368421052631577,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1080#15:5ee2641f3d10",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5882352941176471,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1082#99:70f22fb10a23",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8421052631578948,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1083#159:fc1ee4b81aba",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.823529411764706,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1090#26:f57431014ee3",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6153846153846153,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1091#20:65440e35d512",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4210526315789474,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1095#55:cc57b989903c",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.14285714285714288,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1098.001#6:8c8f71a86925",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8749999999999999,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1102#14:e59731baff18",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1102.002#3:dabf572ca9d1",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7692307692307692,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1105#148:7e6e08a1d39f",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5555555555555556,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1105#242:91e683f3b750",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7777777777777778,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1105#268:7fc73c877987",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1105#285:42ce2117e839",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9090909090909091,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1106#47:22e1c84237b4",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.631578947368421,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1106#8:9ec077fe8659",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5405405405405405,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1112#81:83094d6bcc7f",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.823529411764706,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1114#0:c036424ccf74",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:T1114.001#5:5860afd87683",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.13333333333333333,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1119#42:a245b2271ac8",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7000000000000001,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1124#50:77d51ea6bb73",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9473684210526316,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1129#9:bc29576d7594",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.64,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1134.001#2:d3b2fdd7a71c",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8333333333333334,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1134.002#11:6f6fb1ed2000",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666665,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1135#12:c2046f23b9a7",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.47058823529411764,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1189#11:3dd9f97f03d0",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4444444444444444,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1190#67:6110b405da0b",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9523809523809523,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1201#20:a2d453429afa",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1204#10:d73290d4e8bd",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5555555555555555,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1204.001#7:91281c1cac9c",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5454545454545454,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1204.002#110:9349fe61d725",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7777777777777778,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1204.002#29:f92c17478234",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9473684210526316,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1204.002#56:b2188fab6c20",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.47058823529411764,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1205.002#4:59ec8cc0f905",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1210#29:2ec99a23c434",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1213#11:c0e87326cd06",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1217#12:563ed5b26c3e",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5333333333333333,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1218.011#63:bf12ee43f348",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5555555555555556,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1219#20:bcc3caaef19d",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1222.001#12:cb346ed51378",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1485#10:9fbc12d9aff1",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1486#76:5d94b6cefa20",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.631578947368421,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1518.001#58:ff1f0c31534b",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666666,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1525#0:e5050936f86f",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:T1543.002#12:61fba3d57c45",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1546.001#5:44d8e0bbc66d",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666666,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1546.004#12:f79a15105a3b",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4848484848484848,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1546.013#5:ef6f0dde0bfd",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1547#14:5a76371a0041",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1547.001#135:a813afbf050a",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5555555555555556,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1547.009#6:9fba7acad502",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5161290322580646,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1548.001#2:02b17a436ec5",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4444444444444444,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1548.002#11:68a94827acbc",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.35294117647058826,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1553.001#10:3c2a089e9ad9",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.96,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1553.002#49:ed23b16faf2e",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.823529411764706,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1554#3:4281a5ec086d",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1554#4:0187994744b0",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1555.001#13:a070399e91b5",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.823529411764706,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1559#7:51663be16a6d",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9500000000000001,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1560#31:0535200eb67f",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5555555555555556,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1561.002#1:dba07594501f",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8717948717948718,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1564.003#8:7365bf977aab",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7058823529411765,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1567.002#4:6d5af0c8c8ae",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.13333333333333333,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1568.002#17:8146a2646765",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.47058823529411764,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1571#10:bd36f83d2f81",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.625,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1573.001#40:aa8a61c221c9",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7999999999999999,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1573.001#67:5ecde8382b10",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7368421052631577,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1574.006#22:e08ce16411ec",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666666,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1574.010#5:d55f79889b24",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1580#1:d96673976065",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8571428571428571,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:T1584#18:12a3b45db9f5",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1584.004#6:21ec8bc12bab",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1585.001#3:4c1e42195c9f",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1587.001#7:db4876e1fb2d",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1588.001#15:aabc80e7c593",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8571428571428572,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1590.003#2:dec8c121643e",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1590.004#4:516169260090",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.75,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1595.003#7:2121945ea89a",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1598.004#6:be1ef4ff0c48",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1606#3:0aa4454044fa",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8484848484848485,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1608.001#15:b868a2fa6f6d",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5882352941176471,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1608.004#10:5112755e619e",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1609#2:983d3d624ccb",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1620#20:3bcf275bf256",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4444444444444444,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1665#10:cf14420a248a",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9411764705882353,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1680#59:336f34394ff8",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1683#0:9da2b924e457",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "attack:T1685.003#3:b94777c64b51",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1685.003#9:a8a3ca1139f8",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.761904761904762,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1685.006#9:eb2ad4a04f7c",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.42857142857142855,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:T1686.001#5:4588a012da6b",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.967741935483871,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "attack:TA0004#0:70d36d9656a9",
+      "source_type": "attack_cti",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.3333333333333333,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-001#0:a2d2b20e8d39",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.42424242424242425,
+      "cosine": null,
+      "secret_terms": 2,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-001#1:45e17a685391",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.9545454545454546,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-001#2:4a4626fc2049",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.9642857142857143,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-002#0:9bd4aa0db949",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": false,
+      "token_f1": 0.6153846153846154,
+      "cosine": null,
+      "secret_terms": 2,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-002#1:88ac72a44583",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-002#2:d322a0fd1172",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-003#0:00a35af30275",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.4827586206896552,
+      "cosine": null,
+      "secret_terms": 2,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-003#1:2e9f58acba65",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.8936170212765957,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-004#0:46ce38e397e9",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": false,
+      "token_f1": 0.5853658536585366,
+      "cosine": null,
+      "secret_terms": 3,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-004#1:c7466ab26169",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": false,
+      "token_f1": 0.6122448979591836,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-005#0:8d82571e928e",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.7555555555555555,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-005#1:f4051e777dee",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.7804878048780488,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-006#0:5409b8fb3f59",
+      "source_type": "internal_note",
+      "tlp": "green",
+      "exact_match": false,
+      "token_f1": 0.7692307692307692,
+      "cosine": null,
+      "secret_terms": 2,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-006#1:53c647fae67c",
+      "source_type": "internal_note",
+      "tlp": "green",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-007#0:85d62cdb7123",
+      "source_type": "internal_note",
+      "tlp": "green",
+      "exact_match": false,
+      "token_f1": 0.19354838709677422,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-007#1:e6ecdfe1391d",
+      "source_type": "internal_note",
+      "tlp": "green",
+      "exact_match": false,
+      "token_f1": 0.693877551020408,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-008#0:3f3d12979bff",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": false,
+      "token_f1": 0.6666666666666667,
+      "cosine": null,
+      "secret_terms": 2,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-008#1:71fe147208b1",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-009#0:2700df99c52f",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.6857142857142857,
+      "cosine": null,
+      "secret_terms": 2,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-009#1:14b0e509d898",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-010#0:4ce7d615d288",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.7586206896551724,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-010#1:23cd832734f0",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.782608695652174,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-011#0:9feec2fd22e5",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.5405405405405405,
+      "cosine": null,
+      "secret_terms": 2,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-011#1:94fba9b6bd64",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-012#0:04359ee90a9b",
+      "source_type": "internal_note",
+      "tlp": "green",
+      "exact_match": false,
+      "token_f1": 0.5405405405405405,
+      "cosine": null,
+      "secret_terms": 3,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-012#1:e12c3d30cfde",
+      "source_type": "internal_note",
+      "tlp": "green",
+      "exact_match": false,
+      "token_f1": 0.576923076923077,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-013#0:911da4f56d41",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": false,
+      "token_f1": 0.8000000000000002,
+      "cosine": null,
+      "secret_terms": 2,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-013#1:eda267ede865",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-014#0:94e787a538c9",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.5625,
+      "cosine": null,
+      "secret_terms": 2,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-014#1:905bd0c77878",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-015#0:0db8e3e6ca42",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.45714285714285713,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-015#1:a997ab607514",
+      "source_type": "internal_note",
+      "tlp": "amber",
+      "exact_match": false,
+      "token_f1": 0.7555555555555555,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "internal:INT-2026-016#0:3aaf1e3692c1",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": false,
+      "token_f1": 0.6666666666666667,
+      "cosine": null,
+      "secret_terms": 2,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "internal:INT-2026-016#1:c2a9f070eef2",
+      "source_type": "internal_note",
+      "tlp": "red",
+      "exact_match": false,
+      "token_f1": 0.5116279069767442,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2010-0232#5:15e76caba1e0",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5625,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2020-1380#3:d0f137b21376",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7391304347826088,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2023-50224#6:ac79ee6dc671",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2024-47886#1:7ecd11b27269",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7999999999999999,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2025-3654#1:9cd4d69ef779",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6285714285714287,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2025-55095#2:763270d43102",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2025-71123#0:2bc4922fbce9",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666666,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2025-71159#3:9562be40258e",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2025-9282#0:d676d0df7882",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8484848484848485,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-0574#1:b02ba981f03a",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-0590#1:29d2c015a026",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7222222222222222,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-0700#0:f18afbb44c79",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.45,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-10061#0:b3c1dd7c83e0",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-10931#0:a772bcdb14ba",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.41025641025641024,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-1122#1:4da29f3950ec",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7500000000000001,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-12997#2:ced0287c32b2",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-13054#3:5a294e935586",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-13777#1:ca9b811718ad",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-14241#0:6c3fa44c4a52",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5116279069767442,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-14539#3:19cbe9886336",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8717948717948718,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-1546#0:7e17c63af99f",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-1547#0:0018b1011934",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-1547#1:2aaab452bce7",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7222222222222222,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-1837#1:0bf58cfb40e3",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666667,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-19448#0:9d442121c2f7",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5641025641025641,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-2042#0:8e05ca47cd4b",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666666,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-2055#0:ef21af9abfe0",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.918918918918919,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-20741#0:450e135551d2",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-20745#3:3cc4642483d0",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5625,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-2122#1:d7974389d022",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7222222222222222,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-21628#1:c7bf42680b55",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-22035#2:5b5726750cd7",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.75,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-22184#1:529353dc7e7a",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6060606060606061,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-22223#1:5e27194c758c",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666667,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-2227#0:c208dd3fdc77",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-22782#1:6de01d090543",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.3333333333333333,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-22803#1:bc3b893c8584",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666667,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-22807#3:a9da9cd0081a",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666667,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-23111#2:80114b5879d2",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-23517#3:294b2eb28153",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.711111111111111,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-24010#1:5930eab545bc",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-24132#4:39774d316e18",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6451612903225806,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-24148#1:a4b5e076e912",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6451612903225806,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-24716#0:36862f054ed7",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5714285714285715,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-25072#1:d3372ddde375",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5294117647058824,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-25238#1:a02873c544c8",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5454545454545455,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-25495#4:e0311a1d3850",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8205128205128205,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-25725#3:88dd37b9a58e",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-26263#0:45d06d81e815",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6153846153846153,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-2634#0:0d3cb8b4da60",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9444444444444444,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-27002#2:f158a7072158",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-2743#0:948e2e17006b",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.787878787878788,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-27495#0:f99c8eae3fd1",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.3333333333333333,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-27702#2:d2e37d0fa491",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.75,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-27730#5:edd134b439f3",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5161290322580646,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-27743#3:3548b712e3be",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4848484848484848,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-27829#2:956784626b50",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5714285714285715,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-27952#2:ea640ebe6b87",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.25,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-28778#3:2f3b4196d413",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.46153846153846156,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-28787#2:b0bb7eda93ec",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-29075#1:5d8b580c277d",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6363636363636364,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-29139#1:65fee401ebba",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7999999999999999,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-31806#3:eaa1ec21bf1d",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6842105263157895,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-31840#1:6d70bd7df57f",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-3192#3:64002ae3d97d",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.717948717948718,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-32669#0:e4b0bd4bd23f",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5405405405405405,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-32974#0:3b955ce71b66",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4827586206896552,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-33054#2:6ea80de1c88c",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-33078#1:da1d289b2e95",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666666,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-33280#2:f9197162b232",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.43478260869565216,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-33729#3:9a0bb4b6dff5",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7222222222222222,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-34464#6:51dbb6b49ab9",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5999999999999999,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-34569#0:614b05cf876b",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.3333333333333333,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-34977#4:4f3279880b9e",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-39803#1:5dd33cc9e45b",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5714285714285715,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-41052#1:217b27560731",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.0909090909090909,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-41276#6:8f47227f56de",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6285714285714287,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-41486#1:a4eb8b20b1a5",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.3333333333333333,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-41873#2:55dc95fd039d",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-42349#0:5d0227b72d19",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666666,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-42850#2:6af02ac4f7ba",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-42861#5:272b9d9227bf",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6060606060606061,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-42960#5:a2300b28e810",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-42960#6:259360d5420d",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6060606060606061,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-42999#0:8a68544b7415",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-43566#0:5b4b9b30cf5b",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4000000000000001,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-43906#1:7be3909655a3",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7272727272727272,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-43983#3:81f2cb1a9589",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6486486486486486,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-44792#5:609e8cba435a",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6470588235294118,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-45788#1:3fc4c75224e7",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7058823529411765,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-45820#0:2406cf2d4ab5",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.30303030303030304,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-45920#0:51890b1a8c41",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666666,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-45957#5:df3fae2d0f3b",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4000000000000001,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-46047#2:1c856ed9b4ad",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5161290322580646,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-46064#6:e35538710a71",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5806451612903226,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-46069#0:829c8b287bea",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-46508#4:abcc062af938",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-47150#0:4a26b94ec7f5",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.3870967741935484,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-48939#1:70fc699a9f66",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5263157894736842,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-49188#0:e9bde64f2b80",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9032258064516129,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-50209#1:13f1be968434",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.1904761904761905,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-50489#1:57a400762817",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.787878787878788,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-50628#1:c2da75c8814b",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.43478260869565216,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-50694#0:b236bda24e50",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6285714285714287,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-53116#4:d001af66331e",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.75,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-53143#0:b203e5de1a3e",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-53470#0:1ce4d2c8ff53",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-53622#1:f6900106170c",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-54314#2:e58f85b56124",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-5509#2:dcba5e48c9cc",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-55200#1:b59446a6fcb6",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5454545454545455,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-55471#5:f5775382da90",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7999999999999999,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-55953#1:b101951b52a2",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666666,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-55953#5:1fc8d76ba048",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7083333333333334,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-55968#0:e4ec8f37bec5",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-59827#0:8ae98d80f407",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-59856#1:2e7ae7488d66",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666666,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-59858#4:b82f05452d11",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9523809523809523,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-65601#3:7ca7a03f6c24",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6470588235294118,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-66039#2:199d1ab250c4",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-71962#1:6394f9031845",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.3333333333333333,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-7372#0:2545060a6da6",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 1
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-7531#1:39a6eca7db13",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7222222222222222,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-8312#1:49ec9ab618da",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.8125,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-8432#0:8ade081d0df8",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.65,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-8720#3:02ac0731f464",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.375,
+      "cosine": null,
+      "secret_terms": 1,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "nvd:CVE-2026-8763#1:e5208c6b53db",
+      "source_type": "nvd_cve",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5161290322580646,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:CROWDSTRIKE-GTR-2025#160:4d391ce82fbd",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:CROWDSTRIKE-GTR-2025#94:0cfed577c637",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:DRAGOS-YIR-2026#178:6660753d9e3d",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:DRAGOS-YIR-2026#280:1bc3f66ac2cb",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:DRAGOS-YIR-2026#353:26dbfe83a625",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9230769230769231,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:IBM-XFORCE-TII-2026#5:81767a509f45",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:MANDIANT-MTRENDS-2025#194:15609a43c6bb",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.9473684210526315,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:MANDIANT-MTRENDS-2025#386:0dcc327d74ad",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.4444444444444445,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:MANDIANT-MTRENDS-2026-EXEC#16:82a391606d4c",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6666666666666667,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:RC-TDR-2025#222:0c19b3323a55",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6486486486486486,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:RC-TDR-2025#313:3ed04511ba69",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7999999999999999,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:RC-TDR-2025#329:dd99f37358d3",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:RC-TDR-2026#109:cd567fa5b1af",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.46511627906976744,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:RC-TDR-2026#270:07671a770715",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.6842105263157895,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:RC-TDR-2026#293:b8f5167dce77",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:RC-TDR-2026#5:048cb03e438d",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": true,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:TALOS-YIR-2025#233:daffb8e937df",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:UNIT42-GIRR-2026#13:4f0ea0a54259",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.7804878048780488,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:UNIT42-GIRR-2026#163:b096b89f1e11",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 0.5,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    },
+    {
+      "chunk_id": "vendor:UNIT42-GIRR-2026#4:21f566804535",
+      "source_type": "vendor_report",
+      "tlp": "clear",
+      "exact_match": false,
+      "token_f1": 1.0,
+      "cosine": null,
+      "secret_terms": 0,
+      "secrets_recovered": 0
+    }
+  ],
+  "corpus_bleu": 0.4436476164944393,
+  "overall": {
+    "name": "overall",
+    "count": 334,
+    "exact_match_rate": 0.2215568862275449,
+    "mean_token_f1": 0.7395091680206025,
+    "mean_cosine": null,
+    "secret_recovery_rate": 0.34265734265734266,
+    "fully_leaked": 43
+  },
+  "by_source_type": [
+    {
+      "name": "attack_cti",
+      "count": 153,
+      "exact_match_rate": 0.2549019607843137,
+      "mean_token_f1": 0.7629237338883557,
+      "mean_cosine": null,
+      "secret_recovery_rate": 0.5172413793103449,
+      "fully_leaked": 15
+    },
+    {
+      "name": "internal_note",
+      "count": 34,
+      "exact_match_rate": 0.20588235294117646,
+      "mean_token_f1": 0.7361838868193535,
+      "mean_cosine": null,
+      "secret_recovery_rate": 0.4,
+      "fully_leaked": 10
+    },
+    {
+      "name": "nvd_cve",
+      "count": 127,
+      "exact_match_rate": 0.1732283464566929,
+      "mean_token_f1": 0.6958933777004078,
+      "mean_cosine": null,
+      "secret_recovery_rate": 0.24324324324324326,
+      "fully_leaked": 18
+    },
+    {
+      "name": "vendor_report",
+      "count": 20,
+      "exact_match_rate": 0.3,
+      "mean_token_f1": 0.8430009857076461,
+      "mean_cosine": null,
+      "secret_recovery_rate": 0.0,
+      "fully_leaked": 0
+    }
+  ],
+  "by_tlp": [
+    {
+      "name": "amber",
+      "count": 17,
+      "exact_match_rate": 0.11764705882352941,
+      "mean_token_f1": 0.7528338364549432,
+      "mean_cosine": null,
+      "secret_recovery_rate": 0.29411764705882354,
+      "fully_leaked": 4
+    },
+    {
+      "name": "clear",
+      "count": 300,
+      "exact_match_rate": 0.22333333333333333,
+      "mean_token_f1": 0.7398860332234108,
+      "mean_cosine": null,
+      "secret_recovery_rate": 0.32038834951456313,
+      "fully_leaked": 33
+    },
+    {
+      "name": "green",
+      "count": 6,
+      "exact_match_rate": 0.16666666666666666,
+      "mean_token_f1": 0.6290200541352615,
+      "mean_cosine": null,
+      "secret_recovery_rate": 0.5,
+      "fully_leaked": 2
+    },
+    {
+      "name": "red",
+      "count": 11,
+      "exact_match_rate": 0.36363636363636365,
+      "mean_token_f1": 0.7689051461193103,
+      "mean_cosine": null,
+      "secret_recovery_rate": 0.4666666666666667,
+      "fully_leaked": 4
+    }
+  ],
+  "scored": 334,
+  "unmatched": []
+}

@@ -130,7 +130,7 @@ tests/
 - [x] **M2** — Generation with citations, FastAPI + demo UI, ACL wired end-to-end
 - [x] **M3** — NVD CVE and vendor PDF sources, chunking-strategy comparison
 - [x] **M4** — Indirect injection, rendering exfiltration, retrieval poisoning
-- [ ] **M5** — Embedding inversion (GTR via vec2text; honest negative result for MiniLM)
+- [x] **M5** — Embedding inversion (GTR via vec2text) and re-identification without a corrector
 - [ ] **M6** — Five defences, independently toggleable
 - [ ] **M7** — Benchmark runner, two models, defence-vs-utility report
 

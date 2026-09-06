@@ -49,10 +49,10 @@ all 334 sampled points carry both vectors, the collection still holds 40815
 points, and retrieval is unchanged. This was the most valuable thing M5 found
 before it measured anything.
 
-## Attack 1 — reconstruction (GTR): prepared, not yet run
+## Attack 1 — reconstruction (GTR): run live on a local GPU
 
-`threatrag invert prepare` samples, attaches GTR vectors and writes two
-bundles. The split is a property of the experiment, not tidiness:
+`threatrag invert prepare` samples, attaches GTR vectors and writes the
+bundles. One split is a property of the experiment, not tidiness:
 
 | file | contents | leaves the machine |
 |---|---|---|
@@ -166,6 +166,78 @@ the stored bundle does not, then chunk length and cosine normalisation are
 doing the defending — accidentally — and that is something M6 can turn into a
 deliberate, measurable control.
 
+### Result: 334 vectors per bundle, run on a local RTX 4060
+
+1002 reconstructions, 20 correction steps with sequence beam width 4, ~124
+minutes total. Per-chunk scores in `reports/data/m5_inversion_*.json`.
+
+| bundle | exact | token F1 | BLEU-4 | round-trip cosine | note secrets |
+|---|---|---|---|---|---|
+| **stored** — full length, Qdrant-normalised | 0.024 | 0.254 | 0.0035 | 0.771 | 0.065 |
+| **unnormalized** — full length, magnitudes | 0.117 | 0.328 | 0.0082 | 0.794 | 0.117 |
+| **control** — 32 tokens, magnitudes | **0.222** | **0.740** | **0.4436** | **0.960** | **0.400** |
+
+Both variables are real and they are separable:
+
+- **Magnitude is worth about 5× exact match.** Restoring it (stored →
+  unnormalized) moves exact match 0.024 → 0.117 and note secret recovery
+  0.065 → 0.117, with length held constant. Qdrant's cosine normalisation is
+  doing genuine defensive work — accidentally.
+- **Length dominates text fidelity.** Shortening to the corrector's training
+  window (unnormalized → control) moves token F1 0.328 → 0.740 and BLEU
+  0.0082 → 0.4436, a 54× change, with magnitude held constant.
+
+### What actually leaked
+
+At the corrector's own training length, **16 of 34 confidential note chunks
+gave up at least one declared secret, and 10 were fully reconstructed**. Two
+TLP:RED passages came back **verbatim**:
+
+> *"Entry Spearphishing attachment: a macro-enabled spreadsheet themed as a
+> quarterly reconciliation, addressed to three named recipie…"*
+
+> *"Impact and unreported detail The actor accessed but did not modify the
+> payment approval matrix. Because the matrix documents which…"*
+
+The second is the same secret M4's exfiltration attack went after. M4 needed a
+poisoned document, a compliant generator and a rendered URL to get it out. Here
+it falls out of a stolen 768-float array with no query, no model and no user.
+
+Others degrade but still disclose: `43 seconds` (a beacon interval) survives
+into a sentence whose other numbers are scrambled; an AMBER note returns *"used
+a signed driver to obtain a handle to LSASS, and then wrote the dump to"* against
+a truth of *"used a signed but outdated driver to obtain a handle to LSASS, then
+wrote the dump to"*.
+
+On the **stored** bundle — the realistic case — verbatim recovery collapses
+(exact 0.000 for notes) but disclosure does not reach zero: 0.065 of declared
+secrets and 2 fully leaked chunks. Reconstructions there read as topic-accurate
+noise, recovering *LSASS*, *Windows*, *Temp* and a mangled `TREAS-W7734` while
+losing the sentences around them.
+
+### How to read this honestly
+
+**This is not "GTR is invertible" and not "GTR is safe".** The measured claim
+is narrower and it is the one the numbers support: *with the only publicly
+available corrector, an attacker who steals this index recovers gist and
+scattered identifiers, and would recover verbatim confidential text if the
+chunks were short and the magnitudes intact.*
+
+Three caveats bound it, and all three favour the defender:
+
+1. The corrector is trained on 32-token Natural Questions passages — general
+   web prose, not incident reports. An attacker who trained one on threat-intel
+   text at 512 tokens would do better, and that is a few GPU-days, not a
+   research programme.
+2. The 0.024 exact match on the stored bundle is a floor produced partly by
+   *this deployment's* accidental properties, not by GTR resisting inversion.
+3. Nothing here was tuned. Steps and beam width are the published defaults, held
+   identical across bundles so the comparison means something.
+
+The defensive reading is the useful one: **long chunks and stored normalisation
+each cost the attacker a large factor, and neither was chosen as a defence.**
+M6 can make both deliberate and measure what they cost retrieval.
+
 ## Attack 2 — re-identification (MiniLM): the corrector-free attack, run live
 
 No public corrector exists for `all-MiniLM-L6-v2`, the model the system
@@ -252,6 +324,15 @@ plainly the right subject — and scores as a miss because the words differ.
   retrieve by identifier (recorded four times now), yet it matches a document
   to its published source 38% of the time. Weak at the task, strong at the
   fingerprint.
-- **Attack 1 is outstanding.** The bundle is exported and the runner is
-  written; it needs one GPU session. Until it runs, M5 has one half of its
-  result.
+- **Chunk size is now a security parameter, not only a retrieval one.** M1
+  chose 512 characters on recall evidence alone. That choice turns out to cost
+  the attacker a 54× factor in BLEU, and M6 can price the trade-off in both
+  directions for the first time.
+- **The cosine/dot distance choice is a defence nobody made.** Switching the
+  collection to dot distance to preserve magnitudes would hand an index thief a
+  5× improvement in exact reconstruction, for no retrieval benefit that M1
+  measured. Worth stating as a deployment rule.
+- **M4 and M5 reach the same secret by different routes.** The payment approval
+  matrix required a poisoned document, a compliant generator and a rendered URL
+  in M4; in M5 it falls out of a stolen float array. A defence set that stops
+  one does nothing about the other, which is exactly the axis M7 should plot.
