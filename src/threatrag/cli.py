@@ -30,6 +30,7 @@ from threatrag.security.attacks.sink import ExfiltrationSink
 from threatrag.security.inversion.backfill import backfill_vectors
 from threatrag.security.inversion.export import (
     TRUTH_FILE,
+    export_control,
     export_targets,
     load_reconstructions,
     load_truth,
@@ -421,6 +422,10 @@ app.add_typer(invert_app, name="invert")
 
 DEFAULT_INVERSION_DIR = Path("data/inversion")
 
+# The control bundle lives beside the main one so `invert score --out` can
+# point at either without a second set of flags.
+CONTROL_SUBDIR = "control"
+
 # ATT&CK and NVD are published, so an attacker can rebuild them himself. Vendor
 # PDFs are omitted by default only because they are gitignored and may not be
 # on disk, not because they are secret.
@@ -441,6 +446,13 @@ def invert_prepare(
     out_dir: Annotated[
         Path, typer.Option("--out", help="Where to write the bundles.")
     ] = DEFAULT_INVERSION_DIR,
+    control_tokens: Annotated[
+        int,
+        typer.Option(
+            "--control-tokens",
+            help="Also export a bundle at the corrector's training length; 0 to skip.",
+        ),
+    ] = 32,
 ) -> None:
     """Sample chunks, attach the attacked encoder's vectors, and export the bundle.
 
@@ -478,6 +490,20 @@ def invert_prepare(
     table.add_row("answer key", f"{TRUTH_FILE} (stays local)")
     table.add_row("directory", str(out_dir))
     console.print(table)
+
+    if control_tokens > 0:
+        # Embedded here rather than read from the store: the collection has no
+        # spare named vector to hold a second convention, and Qdrant cannot add
+        # one to an existing collection.
+        control_dir = out_dir / CONTROL_SUBDIR
+        control_encoder = factory.build_control_embedder(cfg, embedder, control_tokens)
+        with console.status(f"Embedding the {control_tokens}-token control bundle..."):
+            control = export_control(sample, control_encoder, out_dir=control_dir)
+        console.print(
+            f"control bundle: [bold]{control.exported}[/] vectors at "
+            f"{control.max_tokens} tokens in {control_dir} — the corrector's own "
+            f"training length, so the main result can be read against it"
+        )
     console.print(
         Panel(
             f"Upload only [bold]{'[/] and [bold]'.join(manifest.upload_files)}[/] to the GPU "

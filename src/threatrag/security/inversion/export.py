@@ -13,16 +13,32 @@ so the split is a property of the experiment rather than tidiness.
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 import numpy as np
 from pydantic import BaseModel, Field
 
 from threatrag.domain.ports import VectorStore
-from threatrag.domain.types import Vector
+from threatrag.domain.types import Matrix, Vector
 from threatrag.security.inversion.sample import SampleReport, secret_terms
+
+
+class TruncatingEmbedder(Protocol):
+    """An embedder that can say what text it actually saw after truncation."""
+
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def max_tokens(self) -> int | None: ...
+
+    def embed_documents(self, texts: Sequence[str]) -> Matrix: ...
+
+    def tokenized_prefix(self, text: str) -> str: ...
+
 
 VECTORS_FILE = "vectors.npy"
 IDS_FILE = "vector_ids.json"
@@ -38,6 +54,9 @@ class ExportManifest(BaseModel):
     exported: int
     missing: list[str] = Field(default_factory=list)
     seed: int = 0
+    # Set on the control bundle only: the token budget its vectors were
+    # embedded under, which is also the length its answer key was cut to.
+    max_tokens: int | None = None
     population: dict[str, int] = Field(default_factory=dict)
     selected: dict[str, int] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -46,6 +65,66 @@ class ExportManifest(BaseModel):
     def upload_files(self) -> tuple[str, str]:
         """The only two files that may leave the machine."""
         return (VECTORS_FILE, IDS_FILE)
+
+
+def export_control(
+    sample: SampleReport,
+    embedder: TruncatingEmbedder,
+    *,
+    out_dir: Path,
+) -> ExportManifest:
+    """A second bundle embedded at the corrector's own training length.
+
+    The public GTR corrector was fitted on 32-token sequences and these chunks
+    are 512 characters, so a weak result on the main bundle has two possible
+    causes that matter very differently: the attack does not work, or the text
+    is longer than the attack was built for. This bundle separates them by
+    running the same attack on the length it was designed for, and is the upper
+    bound the main result should be read against.
+
+    The answer key holds the *decoded truncated prefix*, not the full chunk.
+    Scoring a 32-token vector against 512 characters would mark the
+    reconstruction wrong for omitting words its vector never carried.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    chunks = list(sample.chunks)
+    prefixes = [embedder.tokenized_prefix(chunk.text) for chunk in chunks]
+    matrix = (
+        embedder.embed_documents(prefixes).astype(np.float32)
+        if chunks
+        else np.empty((0, 0), dtype=np.float32)
+    )
+
+    np.save(out_dir / VECTORS_FILE, matrix)
+    _write_json(out_dir / IDS_FILE, [chunk.id for chunk in chunks])
+
+    with (out_dir / TRUTH_FILE).open("w", encoding="utf-8", newline="\n") as handle:
+        for chunk, prefix in zip(chunks, prefixes, strict=True):
+            record = {
+                "chunk_id": chunk.id,
+                "doc_id": chunk.doc_id,
+                "source_type": chunk.source_type.value,
+                "source_ref": chunk.source_ref,
+                "title": chunk.title,
+                "tlp": chunk.tlp.value,
+                "text": prefix,
+                "secret_terms": [
+                    term for term in secret_terms(chunk) if term.lower() in prefix.lower()
+                ],
+            }
+            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    manifest = ExportManifest(
+        vector_name=embedder.name,
+        dim=int(matrix.shape[1]) if matrix.size else 0,
+        exported=len(chunks),
+        seed=sample.seed,
+        population=sample.population,
+        selected=sample.selected,
+        max_tokens=embedder.max_tokens,
+    )
+    _write_json(out_dir / MANIFEST_FILE, manifest.model_dump(mode="json"))
+    return manifest
 
 
 def export_targets(

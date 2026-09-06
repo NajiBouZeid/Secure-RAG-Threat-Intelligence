@@ -52,6 +52,27 @@ def build_embedder(
     raise ValueError(f"Unsupported embedding backend {spec.backend!r}")
 
 
+def build_control_embedder(config: Config, name: str, max_tokens: int) -> MeanPooledEncoderEmbedder:
+    """The encoder for the inversion control bundle, at a fixed token budget.
+
+    Returns the concrete type rather than the ``Embedder`` protocol because the
+    control bundle needs ``tokenized_prefix`` to record what the vector actually
+    encoded, and it is only meaningful for the backend the corrector was trained
+    against -- a sentence-transformers encoder here would silently produce a
+    control in the wrong vector space, which is the failure this whole path
+    exists to avoid.
+    """
+    embedder = build_embedder(config, name, max_tokens=max_tokens)
+    if not isinstance(embedder, MeanPooledEncoderEmbedder):
+        _, spec = config.embedding.resolve(name)
+        raise ValueError(
+            f"The inversion control bundle needs the mean_pooled_encoder backend, but "
+            f"{name!r} is configured as {spec.backend!r}. The public corrector was trained "
+            f"on mean-pooled encoder states; another convention inverts to nonsense."
+        )
+    return embedder
+
+
 def build_store(config: Config) -> VectorStore:
     backend = config.vector_store.backend
     if backend != "qdrant":

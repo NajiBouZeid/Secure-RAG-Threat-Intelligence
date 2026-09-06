@@ -14,11 +14,12 @@ from pathlib import Path
 import numpy as np
 
 from threatrag.domain.models import TLP, Chunk, SourceType
-from threatrag.domain.types import Vector
+from threatrag.domain.types import Matrix, Vector
 from threatrag.security.inversion.export import (
     IDS_FILE,
     TRUTH_FILE,
     VECTORS_FILE,
+    export_control,
     export_targets,
     load_truth,
 )
@@ -130,3 +131,59 @@ def test_an_empty_sample_still_writes_a_readable_bundle(tmp_path: Path) -> None:
     assert manifest.exported == 0
     assert np.load(tmp_path / VECTORS_FILE).shape[0] == 0
     assert load_truth(tmp_path / TRUTH_FILE) == {}
+
+
+class TruncatingStub:
+    """Stands in for the mean-pooled encoder: records what it was asked to embed."""
+
+    name = "gtr-base"
+    max_tokens = 4
+
+    def __init__(self) -> None:
+        self.seen: list[str] = []
+
+    def embed_documents(self, texts: Sequence[str]) -> Matrix:
+        self.seen = list(texts)
+        return np.ones((len(texts), 3), dtype=np.float32)
+
+    def tokenized_prefix(self, text: str) -> str:
+        return " ".join(text.split()[: self.max_tokens])
+
+
+def test_the_control_answer_key_holds_the_truncated_prefix(tmp_path: Path) -> None:
+    """Scoring a 32-token vector against 512 characters marks it wrong for
+    omitting words its vector never carried."""
+    chunk = _chunk(0, text="alpha beta gamma delta epsilon zeta")
+
+    export_control(_sample([chunk]), TruncatingStub(), out_dir=tmp_path)
+
+    record = load_truth(tmp_path / TRUTH_FILE)[chunk.id]
+    assert record["text"] == "alpha beta gamma delta"
+
+
+def test_the_control_embeds_the_prefix_not_the_full_chunk(tmp_path: Path) -> None:
+    chunk = _chunk(0, text="alpha beta gamma delta epsilon zeta")
+    embedder = TruncatingStub()
+
+    export_control(_sample([chunk]), embedder, out_dir=tmp_path)
+
+    assert embedder.seen == ["alpha beta gamma delta"]
+
+
+def test_control_secret_terms_drop_out_when_truncated_away(tmp_path: Path) -> None:
+    """A secret past the token budget is not in the vector, so recovering it
+    would be impossible and counting it would understate the attack."""
+    chunk = _chunk(0, text="alpha beta gamma delta 41 repositories").model_copy(
+        update={"metadata": {"secret_terms": ["41 repositories"]}}
+    )
+
+    export_control(_sample([chunk]), TruncatingStub(), out_dir=tmp_path)
+
+    assert load_truth(tmp_path / TRUTH_FILE)[chunk.id]["secret_terms"] == []
+
+
+def test_the_control_manifest_records_the_token_budget(tmp_path: Path) -> None:
+    manifest = export_control(_sample([_chunk(0)]), TruncatingStub(), out_dir=tmp_path)
+
+    assert manifest.max_tokens == 4
+    assert manifest.exported == 1
