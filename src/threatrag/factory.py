@@ -52,8 +52,10 @@ def build_embedder(
     raise ValueError(f"Unsupported embedding backend {spec.backend!r}")
 
 
-def build_control_embedder(config: Config, name: str, max_tokens: int) -> MeanPooledEncoderEmbedder:
-    """The encoder for the inversion control bundle, at a fixed token budget.
+def build_control_embedder(
+    config: Config, name: str, max_tokens: int | None
+) -> MeanPooledEncoderEmbedder:
+    """The encoder for an inversion control bundle. ``None`` means full length.
 
     Returns the concrete type rather than the ``Embedder`` protocol because the
     control bundle needs ``tokenized_prefix`` to record what the vector actually

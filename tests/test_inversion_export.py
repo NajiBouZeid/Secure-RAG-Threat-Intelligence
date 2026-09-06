@@ -155,7 +155,9 @@ def test_the_control_answer_key_holds_the_truncated_prefix(tmp_path: Path) -> No
     omitting words its vector never carried."""
     chunk = _chunk(0, text="alpha beta gamma delta epsilon zeta")
 
-    export_control(_sample([chunk]), TruncatingStub(), out_dir=tmp_path)
+    export_control(
+        _sample([chunk]), TruncatingStub(), out_dir=tmp_path, variant="len32_unnormalized"
+    )
 
     record = load_truth(tmp_path / TRUTH_FILE)[chunk.id]
     assert record["text"] == "alpha beta gamma delta"
@@ -165,7 +167,7 @@ def test_the_control_embeds_the_prefix_not_the_full_chunk(tmp_path: Path) -> Non
     chunk = _chunk(0, text="alpha beta gamma delta epsilon zeta")
     embedder = TruncatingStub()
 
-    export_control(_sample([chunk]), embedder, out_dir=tmp_path)
+    export_control(_sample([chunk]), embedder, out_dir=tmp_path, variant="len32_unnormalized")
 
     assert embedder.seen == ["alpha beta gamma delta"]
 
@@ -177,13 +179,36 @@ def test_control_secret_terms_drop_out_when_truncated_away(tmp_path: Path) -> No
         update={"metadata": {"secret_terms": ["41 repositories"]}}
     )
 
-    export_control(_sample([chunk]), TruncatingStub(), out_dir=tmp_path)
+    export_control(
+        _sample([chunk]), TruncatingStub(), out_dir=tmp_path, variant="len32_unnormalized"
+    )
 
     assert load_truth(tmp_path / TRUTH_FILE)[chunk.id]["secret_terms"] == []
 
 
 def test_the_control_manifest_records_the_token_budget(tmp_path: Path) -> None:
-    manifest = export_control(_sample([_chunk(0)]), TruncatingStub(), out_dir=tmp_path)
+    manifest = export_control(
+        _sample([_chunk(0)]), TruncatingStub(), out_dir=tmp_path, variant="len32_unnormalized"
+    )
 
     assert manifest.max_tokens == 4
     assert manifest.exported == 1
+
+
+def test_each_bundle_records_which_variant_it_is(tmp_path: Path) -> None:
+    """Three bundles differ in ways that mean different things; a score is
+    uninterpretable without knowing which one produced it."""
+    manifest = export_control(
+        _sample([_chunk(0)]), TruncatingStub(), out_dir=tmp_path, variant="full_unnormalized"
+    )
+
+    assert manifest.variant == "full_unnormalized"
+
+
+def test_the_stored_bundle_is_labelled_as_stored(tmp_path: Path) -> None:
+    chunk = _chunk(0)
+    store = VectorStub({chunk.id: np.ones(4, dtype=np.float32)})
+
+    manifest = export_targets(store, _sample([chunk]), vector_name="gtr-base", out_dir=tmp_path)
+
+    assert manifest.variant == "stored"

@@ -424,7 +424,11 @@ DEFAULT_INVERSION_DIR = Path("data/inversion")
 
 # The control bundle lives beside the main one so `invert score --out` can
 # point at either without a second set of flags.
+# Three bundles, because a weak reconstruction has three possible causes and
+# they mean different things. The stored one is what a thief of this index
+# actually holds; the other two remove one confound each.
 CONTROL_SUBDIR = "control"
+UNNORMALIZED_SUBDIR = "unnormalized"
 
 # ATT&CK and NVD are published, so an attacker can rebuild them himself. Vendor
 # PDFs are omitted by default only because they are gitignored and may not be
@@ -491,18 +495,32 @@ def invert_prepare(
     table.add_row("directory", str(out_dir))
     console.print(table)
 
+    # Both extra bundles are embedded here rather than read from the store: the
+    # collection has no spare named vector for another convention, Qdrant cannot
+    # add one to an existing collection, and anything written to a cosine
+    # collection comes back normalised anyway, which is the confound one of them
+    # exists to remove.
     if control_tokens > 0:
-        # Embedded here rather than read from the store: the collection has no
-        # spare named vector to hold a second convention, and Qdrant cannot add
-        # one to an existing collection.
         control_dir = out_dir / CONTROL_SUBDIR
         control_encoder = factory.build_control_embedder(cfg, embedder, control_tokens)
         with console.status(f"Embedding the {control_tokens}-token control bundle..."):
-            control = export_control(sample, control_encoder, out_dir=control_dir)
+            control = export_control(
+                sample, control_encoder, out_dir=control_dir, variant="len32_unnormalized"
+            )
         console.print(
             f"control bundle: [bold]{control.exported}[/] vectors at "
             f"{control.max_tokens} tokens in {control_dir} — the corrector's own "
-            f"training length, so the main result can be read against it"
+            f"training length"
+        )
+
+        raw_dir = out_dir / UNNORMALIZED_SUBDIR
+        raw_encoder = factory.build_control_embedder(cfg, embedder, None)
+        with console.status("Embedding the full-length unnormalised bundle..."):
+            raw = export_control(sample, raw_encoder, out_dir=raw_dir, variant="full_unnormalized")
+        console.print(
+            f"unnormalised bundle: [bold]{raw.exported}[/] full-length vectors in "
+            f"{raw_dir} — separates lost magnitude from chunk length as the cause "
+            f"of any failure on the stored bundle"
         )
     console.print(
         Panel(

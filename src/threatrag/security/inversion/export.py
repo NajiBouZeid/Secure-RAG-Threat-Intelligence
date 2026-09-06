@@ -52,6 +52,9 @@ class ExportManifest(BaseModel):
     vector_name: str
     dim: int
     exported: int
+    # Which of the three bundles this is. They differ in ways that matter
+    # separately, so a result is meaningless without knowing which it scored.
+    variant: str = "stored"
     missing: list[str] = Field(default_factory=list)
     seed: int = 0
     # Set on the control bundle only: the token budget its vectors were
@@ -72,6 +75,7 @@ def export_control(
     embedder: TruncatingEmbedder,
     *,
     out_dir: Path,
+    variant: str,
 ) -> ExportManifest:
     """A second bundle embedded at the corrector's own training length.
 
@@ -118,6 +122,7 @@ def export_control(
         vector_name=embedder.name,
         dim=int(matrix.shape[1]) if matrix.size else 0,
         exported=len(chunks),
+        variant=variant,
         seed=sample.seed,
         population=sample.population,
         selected=sample.selected,
@@ -137,9 +142,17 @@ def export_targets(
     """Read the sampled vectors back out of the index and write the bundles.
 
     Vectors are read from the store rather than recomputed, so what is attacked
-    is the value actually sitting in the database -- including whatever
-    precision Qdrant stored it at -- and not a fresh embedding that happens to
-    agree with it.
+    is the value actually sitting in the database and not a fresh embedding that
+    happens to agree with it. That distinction turned out to matter: a Qdrant
+    collection using cosine distance **normalises vectors on write**, verified
+    against a live instance by storing a norm-5 vector and reading back a norm-1
+    one. Whoever steals this index gets directions, not magnitudes, and the
+    corrector was trained on unnormalised embeddings.
+
+    So this bundle is the honest realistic case, and it is also not enough on
+    its own -- see ``export_control`` for the two bundles that let a failure
+    here be attributed to length or to that lost magnitude rather than to the
+    attack.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     chunk_ids = [chunk.id for chunk in sample.chunks]
