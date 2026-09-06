@@ -13,6 +13,7 @@ reports/**/*.png
 __pycache__/
 *.py[cod]
 .venv/
+.venv-inv/
 venv/
 *.egg-info/
 .pytest_cache/
