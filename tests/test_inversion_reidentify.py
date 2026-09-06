@@ -13,7 +13,7 @@ import numpy as np
 
 from threatrag.domain.models import TLP, Chunk, Document, SourceType
 from threatrag.domain.types import Matrix, Vector
-from threatrag.security.inversion.reidentify import build_reference, reidentify
+from threatrag.security.inversion.reidentify import build_reference, reidentify, topic_terms
 
 
 class PlacedEmbedder:
@@ -36,10 +36,12 @@ class PlacedEmbedder:
         return self.embed_documents([text])[0]
 
 
-def _document(doc_id: str, ref: str, text: str) -> Document:
+def _document(doc_id: str, ref: str, text: str, title: str | None = None) -> Document:
+    # Titles carry the identifier and a parenthesised kind, exactly as the
+    # ATT&CK ingest writes them, because that is what topic terms are cut from.
     return Document(
         id=doc_id,
-        title=ref,
+        title=title if title is not None else f"{ref} (technique)",
         text=text,
         source_type=SourceType.ATTACK_CTI,
         source_ref=ref,
@@ -74,8 +76,12 @@ def _corpus() -> tuple[PlacedEmbedder, list[Document]]:
         }
     )
     documents = [
-        _document("T1055", "T1055", "process injection body"),
-        _document("T1003", "T1003", "credential dumping body"),
+        _document(
+            "T1055", "T1055", "process injection body", "T1055 Process Injection (technique)"
+        ),
+        _document(
+            "T1003", "T1003", "credential dumping body", "T1003 OS Credential Dumping (technique)"
+        ),
     ]
     return embedder, documents
 
@@ -114,7 +120,7 @@ def test_a_confidential_note_is_scored_on_topic_disclosure_not_recognition() -> 
     note = _chunk(
         "INT-1#0",
         "INT-1",
-        "Incident review: the intruder used T1055 against the treasury host",
+        "Incident review: the intruder relied on process injection against the treasury host",
         source_type=SourceType.INTERNAL_NOTE,
         tlp=TLP.RED,
     )
@@ -126,6 +132,23 @@ def test_a_confidential_note_is_scored_on_topic_disclosure_not_recognition() -> 
     assert row.correct is False
     assert row.topic_hit is True
     assert report.topic_disclosure_rate == 1.0
+
+
+def test_topic_disclosure_does_not_require_the_note_to_quote_the_identifier() -> None:
+    """Analysts write prose; scoring only literal ids reports zero disclosure."""
+    embedder, documents = _corpus()
+    corpus, reference = build_reference(documents, embedder)
+    note = _chunk(
+        "INT-1#0",
+        "INT-1",
+        "The actor performed process injection into a signed binary",
+        source_type=SourceType.INTERNAL_NOTE,
+    )
+
+    report = reidentify([note], {note.id: np.array([1.0, 0.0, 0.0], np.float32)}, corpus, reference)
+
+    assert report.rows[0].ref_hit is False
+    assert report.rows[0].topic_hit is True
 
 
 def test_a_confidential_note_whose_neighbour_misses_its_subject_is_not_a_hit() -> None:
@@ -150,7 +173,9 @@ def test_the_two_populations_are_scored_separately() -> None:
     embedder, documents = _corpus()
     corpus, reference = build_reference(documents, embedder)
     public = _chunk("T1055#0", "T1055", "process injection body")
-    note = _chunk("INT-1#0", "INT-1", "about T1055", source_type=SourceType.INTERNAL_NOTE)
+    note = _chunk(
+        "INT-1#0", "INT-1", "about process injection", source_type=SourceType.INTERNAL_NOTE
+    )
     stolen = {
         public.id: np.array([1.0, 0.0, 0.0], np.float32),
         note.id: np.array([1.0, 0.0, 0.0], np.float32),
@@ -162,6 +187,36 @@ def test_the_two_populations_are_scored_separately() -> None:
     assert report.unrecognisable == 1
     assert report.top1_accuracy == 1.0
     assert report.topic_disclosure_rate == 1.0
+
+
+def test_topic_terms_drop_the_identifier_and_the_kind_marker() -> None:
+    """Otherwise "technique" or "critical" in a note would read as disclosure."""
+    assert topic_terms("T1003.001 LSASS Memory (technique)", "T1003.001") == ["lsass", "memory"]
+
+
+def test_a_cve_title_yields_no_topic_terms() -> None:
+    """An id and a severity name the subject only to someone who looks it up."""
+    assert topic_terms("CVE-2026-26125 (CRITICAL)", "CVE-2026-26125") == []
+
+
+def test_topic_terms_exclude_bare_numbers() -> None:
+    """A note dated 2026-02-11 must not match every CVE published in 2026."""
+    assert "2026" not in topic_terms("CVE-2026-26125 Apache Struts flaw", "CVE-2026-26125")
+
+
+def test_the_two_disclosure_metrics_are_reported_separately() -> None:
+    embedder, documents = _corpus()
+    corpus, reference = build_reference(documents, embedder)
+    quoting = _chunk(
+        "INT-1#0", "INT-1", "the note names T1055 outright", source_type=SourceType.INTERNAL_NOTE
+    )
+
+    report = reidentify(
+        [quoting], {quoting.id: np.array([1.0, 0.0, 0.0], np.float32)}, corpus, reference
+    )
+
+    assert report.ref_hits == 1
+    assert report.rows[0].topic_hit is False
 
 
 def test_the_reference_is_built_from_documents_not_chunks() -> None:

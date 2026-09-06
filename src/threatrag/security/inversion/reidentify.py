@@ -15,13 +15,14 @@ recognised.
 
 The confidential notes are the interesting half, because nothing in the public
 corpus matches them. They cannot be recognised -- but their nearest public
-neighbour still names the technique or CVE the note is about, so the attacker
-learns the subject of a document he cannot read. That is disclosure without
-inversion, and it is what this module measures separately.
+neighbour still names the technique the note is about, so the attacker learns
+the subject of a document he cannot read. That is disclosure without inversion,
+and it is measured separately here.
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping, Sequence
 
 import numpy as np
@@ -30,6 +31,41 @@ from pydantic import BaseModel, Field
 from threatrag.domain.models import Chunk, Document
 from threatrag.domain.ports import Embedder
 from threatrag.domain.types import Matrix, Vector
+from threatrag.security.inversion.score import tokenize
+
+# Titles arrive as "T1003.001 LSASS Memory (technique)" and
+# "CVE-2026-26125 (CRITICAL)". The identifier and the parenthesised kind are
+# scaffolding this project added at ingest, not subject matter: matching on
+# them would score "technique" or "critical" appearing anywhere in a note as
+# topic disclosure.
+_PARENTHESISED = re.compile(r"\([^)]*\)")
+
+# Short tokens and bare numbers say nothing about subject matter, and a note
+# dated 2026-02-11 would otherwise match every CVE published in 2026.
+_MIN_TERM_LENGTH = 4
+_STOPWORDS = frozenset(
+    {"with", "from", "that", "this", "into", "over", "their", "them", "using", "used", "have"}
+)
+
+
+def topic_terms(title: str, source_ref: str) -> list[str]:
+    """Content words from a document's name, with the identifier stripped.
+
+    A CVE title reduces to nothing once its id and severity are removed, which
+    is the conservative answer: the id alone names the subject only to someone
+    who then looks it up.
+    """
+    text = title
+    if source_ref and text.lower().startswith(source_ref.lower()):
+        text = text[len(source_ref) :]
+    text = _PARENTHESISED.sub(" ", text)
+    return [
+        token
+        for token in tokenize(text)
+        if len(token) >= _MIN_TERM_LENGTH
+        and token not in _STOPWORDS
+        and any(character.isalpha() for character in token)
+    ]
 
 
 class ReferenceCorpus(BaseModel):
@@ -37,8 +73,7 @@ class ReferenceCorpus(BaseModel):
 
     doc_ids: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
-
-    model_config = {"arbitrary_types_allowed": True}
+    titles: list[str] = Field(default_factory=list)
 
     @property
     def size(self) -> int:
@@ -52,10 +87,25 @@ class ReidentifyRow(BaseModel):
     tlp: str
     predicted_doc_id: str
     predicted_ref: str
+    predicted_title: str = ""
     score: float
     in_reference: bool
     correct: bool = False
+    # The neighbour's name shares a content word with the chunk: the attacker
+    # has the subject of a document he cannot read.
     topic_hit: bool = False
+    # The stricter question -- the chunk quotes the neighbour's identifier
+    # outright. Reported alongside because analysts write prose, so this
+    # undercounts disclosure badly and it is worth showing by how much.
+    ref_hit: bool = False
+
+
+class PopulationScore(BaseModel):
+    name: str
+    count: int = 0
+    recognised: int = 0
+    topic_hits: int = 0
+    ref_hits: int = 0
 
 
 class ReidentifyReport(BaseModel):
@@ -67,7 +117,9 @@ class ReidentifyReport(BaseModel):
     # Over chunks whose document is not: did the nearest public neighbour still
     # name what the document is about?
     topic_hits: int = 0
+    ref_hits: int = 0
     unrecognisable: int = 0
+    by_source_type: list[PopulationScore] = Field(default_factory=list)
 
     @property
     def top1_accuracy(self) -> float:
@@ -93,6 +145,7 @@ def build_reference(
     """
     doc_ids: list[str] = []
     source_refs: list[str] = []
+    titles: list[str] = []
     texts: list[str] = []
     blocks: list[Matrix] = []
 
@@ -104,6 +157,7 @@ def build_reference(
     for document in documents:
         doc_ids.append(document.id)
         source_refs.append(document.source_ref)
+        titles.append(document.title)
         texts.append(document.text)
         if len(texts) >= batch_size:
             flush()
@@ -114,7 +168,7 @@ def build_reference(
         if blocks
         else np.empty((0, embedder.dim), dtype=np.float32)
     )
-    corpus = ReferenceCorpus(doc_ids=doc_ids, source_refs=source_refs)
+    corpus = ReferenceCorpus(doc_ids=doc_ids, source_refs=source_refs, titles=titles)
     return corpus, _normalize(matrix)
 
 
@@ -129,16 +183,14 @@ def reidentify(
     A chunk counts as recognised when the nearest public document is the one it
     was actually chunked from. A chunk whose document is not public cannot be
     recognised, so it is scored on the weaker question instead: does the
-    identifier of its nearest public neighbour appear in the chunk's own text,
-    meaning the attacker has learned the subject of a document he cannot read.
+    neighbour's name share a content word with the chunk, meaning the attacker
+    has learned the subject of a document he cannot read.
     """
     report = ReidentifyReport(reference_size=corpus.size)
     if corpus.size == 0:
         return report
 
     public_docs = set(corpus.doc_ids)
-    rows: list[ReidentifyRow] = []
-
     scorable = [chunk for chunk in targets if chunk.id in stolen]
     if not scorable:
         return report
@@ -148,37 +200,61 @@ def reidentify(
     similarities = queries @ reference.T
     best = np.argmax(similarities, axis=1)
 
+    rows: list[ReidentifyRow] = []
     for position, chunk in enumerate(scorable):
         index = int(best[position])
-        predicted_doc = corpus.doc_ids[index]
         predicted_ref = corpus.source_refs[index]
+        predicted_title = corpus.titles[index] if corpus.titles else ""
         in_reference = chunk.doc_id in public_docs
+        haystack = set(tokenize(chunk.text))
 
-        row = ReidentifyRow(
-            chunk_id=chunk.id,
-            doc_id=chunk.doc_id,
-            source_type=chunk.source_type.value,
-            tlp=chunk.tlp.value,
-            predicted_doc_id=predicted_doc,
-            predicted_ref=predicted_ref,
-            score=float(similarities[position, index]),
-            in_reference=in_reference,
-            correct=in_reference and predicted_doc == chunk.doc_id,
-            topic_hit=(
-                not in_reference
-                and bool(predicted_ref)
-                and predicted_ref.lower() in chunk.text.lower()
-            ),
+        rows.append(
+            ReidentifyRow(
+                chunk_id=chunk.id,
+                doc_id=chunk.doc_id,
+                source_type=chunk.source_type.value,
+                tlp=chunk.tlp.value,
+                predicted_doc_id=corpus.doc_ids[index],
+                predicted_ref=predicted_ref,
+                predicted_title=predicted_title,
+                score=float(similarities[position, index]),
+                in_reference=in_reference,
+                correct=in_reference and corpus.doc_ids[index] == chunk.doc_id,
+                topic_hit=(
+                    not in_reference
+                    and any(
+                        term in haystack for term in topic_terms(predicted_title, predicted_ref)
+                    )
+                ),
+                ref_hit=(
+                    not in_reference
+                    and bool(predicted_ref)
+                    and predicted_ref.lower() in chunk.text.lower()
+                ),
+            )
         )
-        rows.append(row)
 
+    hidden = [row for row in rows if not row.in_reference]
     return report.model_copy(
         update={
             "rows": rows,
             "recognisable": sum(1 for row in rows if row.in_reference),
             "recognised": sum(1 for row in rows if row.correct),
-            "unrecognisable": sum(1 for row in rows if not row.in_reference),
-            "topic_hits": sum(1 for row in rows if row.topic_hit),
+            "unrecognisable": len(hidden),
+            "topic_hits": sum(1 for row in hidden if row.topic_hit),
+            "ref_hits": sum(1 for row in hidden if row.ref_hit),
+            "by_source_type": [
+                PopulationScore(
+                    name=name,
+                    count=sum(1 for row in rows if row.source_type == name),
+                    recognised=sum(1 for row in rows if row.source_type == name and row.correct),
+                    topic_hits=sum(
+                        1 for row in hidden if row.source_type == name and row.topic_hit
+                    ),
+                    ref_hits=sum(1 for row in hidden if row.source_type == name and row.ref_hit),
+                )
+                for name in sorted({row.source_type for row in rows})
+            ],
         }
     )
 

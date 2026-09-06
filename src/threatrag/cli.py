@@ -594,14 +594,34 @@ def invert_reidentify(
         "public chunks recognised", str(report.recognisable), f"{report.top1_accuracy:.3f}"
     )
     table.add_row(
-        "non-public chunks whose subject leaked",
+        "hidden chunks whose subject leaked",
         str(report.unrecognisable),
         f"{report.topic_disclosure_rate:.3f}",
     )
     console.print(table)
+
+    # Broken out because the hidden population is not homogeneous: the internal
+    # notes are genuinely absent from any public corpus, while vendor chunks are
+    # only absent from the reference this run happened to build.
+    corpora = Table(title="By corpus")
+    corpora.add_column("source type")
+    corpora.add_column("n", justify="right")
+    corpora.add_column("recognised", justify="right")
+    corpora.add_column("subject leaked", justify="right")
+    corpora.add_column("id quoted", justify="right")
+    for group in report.by_source_type:
+        corpora.add_row(
+            group.name,
+            str(group.count),
+            str(group.recognised),
+            str(group.topic_hits),
+            str(group.ref_hits),
+        )
+    console.print(corpora)
     console.print(
         f"top-1 hits {report.recognised}/{report.recognisable}, "
-        f"topic disclosures {report.topic_hits}/{report.unrecognisable}"
+        f"subject leaked {report.topic_hits}/{report.unrecognisable}, "
+        f"identifier quoted outright {report.ref_hits}/{report.unrecognisable}"
     )
 
 
