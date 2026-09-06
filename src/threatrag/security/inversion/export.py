@@ -21,6 +21,7 @@ import numpy as np
 from pydantic import BaseModel, Field
 
 from threatrag.domain.ports import VectorStore
+from threatrag.domain.types import Vector
 from threatrag.security.inversion.sample import SampleReport, secret_terms
 
 VECTORS_FILE = "vectors.npy"
@@ -115,6 +116,34 @@ def load_truth(path: Path) -> dict[str, dict[str, Any]]:
             record = json.loads(line)
             truth[str(record["chunk_id"])] = record
     return truth
+
+
+def load_vectors(out_dir: Path) -> dict[str, Vector]:
+    """Read the exported attack bundle back, keyed by chunk id."""
+    ids: list[str] = json.loads((out_dir / IDS_FILE).read_text(encoding="utf-8"))
+    matrix = np.load(out_dir / VECTORS_FILE)
+    return {chunk_id: matrix[index].astype(np.float32) for index, chunk_id in enumerate(ids)}
+
+
+def load_reconstructions(path: Path) -> dict[str, str]:
+    """Read what came back from the inversion run.
+
+    One JSON object per line with ``chunk_id`` and ``reconstruction``, which is
+    what the GPU-side script writes; a run that produced nothing for a target
+    simply omits it rather than emitting an empty string, so a failed
+    reconstruction is never scored as an empty one.
+    """
+    found: dict[str, str] = {}
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            text = record.get("reconstruction")
+            if text is None:
+                continue
+            found[str(record["chunk_id"])] = str(text)
+    return found
 
 
 def _write_json(path: Path, payload: Any) -> None:

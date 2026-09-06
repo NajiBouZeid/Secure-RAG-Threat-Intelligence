@@ -8,6 +8,7 @@ benchmark runner would need to duplicate.
 from __future__ import annotations
 
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Annotated
 
@@ -18,13 +19,24 @@ from rich.table import Table
 
 from threatrag import factory
 from threatrag.config import Config, load_config
-from threatrag.domain.models import TLP, Principal, SourceType
+from threatrag.domain.models import TLP, Document, Principal, SourceType
 from threatrag.eval import goldset as goldset_module
 from threatrag.eval.metrics import aggregate, score_query
 from threatrag.ingest.pipeline import IngestStats
 from threatrag.ingest.sources.nvd_api import NVD_ATTRIBUTION
 from threatrag.security.attacks.loader import DEFAULT_ATTACK_DIR, load_attacks
 from threatrag.security.attacks.sink import ExfiltrationSink
+from threatrag.security.inversion.backfill import backfill_vectors
+from threatrag.security.inversion.export import (
+    TRUTH_FILE,
+    export_targets,
+    load_reconstructions,
+    load_truth,
+    load_vectors,
+)
+from threatrag.security.inversion.reidentify import build_reference, reidentify
+from threatrag.security.inversion.sample import DEFAULT_SEED, sample_chunks
+from threatrag.security.inversion.score import score_reconstructions
 
 # Citations carry an em dash, and a Windows console defaults to cp1252, which
 # renders it as a replacement character. errors="replace" keeps a legacy console
@@ -399,6 +411,198 @@ def attack_clean(config: ConfigOption = None) -> None:
     store = factory.build_store(cfg)
     removed = store.delete_by_source_type(SourceType.SYNTHETIC_ADVERSARIAL.value)
     console.print(f"[yellow]removed[/] {removed} synthetic-adversarial chunks")
+
+
+invert_app = typer.Typer(
+    add_completion=False, help="Run the M5 embedding-inversion attack against the index."
+)
+app.add_typer(invert_app, name="invert")
+
+DEFAULT_INVERSION_DIR = Path("data/inversion")
+
+# ATT&CK and NVD are published, so an attacker can rebuild them himself. Vendor
+# PDFs are omitted by default only because they are gitignored and may not be
+# on disk, not because they are secret.
+PUBLIC_SOURCES = (SourceType.ATTACK_CTI.value, SourceType.NVD_CVE.value)
+
+
+@invert_app.command("prepare")
+def invert_prepare(
+    config: ConfigOption = None,
+    overlay: OverlayOption = None,
+    embedder: Annotated[
+        str, typer.Option("--embedder", help="Encoder to attack; needs a public corrector.")
+    ] = "gtr-base",
+    size: Annotated[int, typer.Option("--size", help="Sampled chunks outside the census.")] = 300,
+    seed: Annotated[int, typer.Option("--seed", help="Sampling seed; record it with results.")] = (
+        DEFAULT_SEED
+    ),
+    out_dir: Annotated[
+        Path, typer.Option("--out", help="Where to write the bundles.")
+    ] = DEFAULT_INVERSION_DIR,
+) -> None:
+    """Sample chunks, attach the attacked encoder's vectors, and export the bundle.
+
+    Idempotent: re-running with the same seed selects the same chunks and
+    overwrites their vectors with equal ones. The GTR vectors are attached to
+    the existing points, so the MiniLM index the rest of the project measures
+    against is untouched.
+    """
+    cfg = _config(config, overlay)
+    store = factory.build_store(cfg)
+    if store.count() == 0:
+        raise typer.BadParameter(
+            f"Collection {cfg.vector_store.collection!r} is empty; run `threatrag ingest` first."
+        )
+
+    sample = sample_chunks(store, size=size, seed=seed)
+    console.print(
+        f"sampled [bold]{sample.size}[/] chunks (seed {sample.seed}) from "
+        f"{sum(sample.population.values())}: "
+        + ", ".join(f"{name} {count}" for name, count in sample.selected.items())
+    )
+
+    encoder = factory.build_embedder(cfg, embedder)
+    with console.status(f"Embedding {sample.size} chunks with {embedder}..."):
+        stats = backfill_vectors(store, encoder, sample.chunks)
+    console.print(f"attached [bold]{stats.vectors_attached}[/] {embedder} vectors")
+    if stats.skipped:
+        console.print(f"[yellow]{stats.skipped}[/] sampled chunks had no point in the index")
+
+    manifest = export_targets(store, sample, vector_name=embedder, out_dir=out_dir)
+
+    table = Table(title="Inversion bundle")
+    table.add_row("vectors", f"{manifest.exported} x {manifest.dim}d")
+    table.add_row("upload", ", ".join(manifest.upload_files))
+    table.add_row("answer key", f"{TRUTH_FILE} (stays local)")
+    table.add_row("directory", str(out_dir))
+    console.print(table)
+    console.print(
+        Panel(
+            f"Upload only [bold]{'[/] and [bold]'.join(manifest.upload_files)}[/] to the GPU "
+            f"runner. {TRUTH_FILE} is the answer key: sending it would make the result "
+            f"circular, and it carries the AMBER and RED note text.",
+            title="what leaves the machine",
+        )
+    )
+
+
+@invert_app.command("score")
+def invert_score(
+    reconstructions: Annotated[
+        Path, typer.Argument(help="JSONL of chunk_id + reconstruction from the inversion run.")
+    ],
+    config: ConfigOption = None,
+    overlay: OverlayOption = None,
+    embedder: Annotated[
+        str | None,
+        typer.Option("--embedder", help="Re-embed reconstructions for round-trip cosine."),
+    ] = None,
+    out_dir: Annotated[
+        Path, typer.Option("--out", help="Directory holding the exported bundle.")
+    ] = DEFAULT_INVERSION_DIR,
+) -> None:
+    """Score reconstructions against the local answer key."""
+    truth = load_truth(out_dir / TRUTH_FILE)
+    recovered = load_reconstructions(reconstructions)
+    if not recovered:
+        raise typer.BadParameter(f"No reconstructions read from {reconstructions}")
+
+    stolen = None
+    encoder = None
+    if embedder is not None:
+        cfg = _config(config, overlay)
+        encoder = factory.build_embedder(cfg, embedder)
+        stolen = load_vectors(out_dir)
+
+    scores = score_reconstructions(truth, recovered, stolen_vectors=stolen, embedder=encoder)
+
+    table = Table(title=f"Inversion, {scores.scored} targets scored")
+    table.add_column("group")
+    table.add_column("n", justify="right")
+    table.add_column("exact", justify="right")
+    table.add_column("token F1", justify="right")
+    table.add_column("cosine", justify="right")
+    table.add_column("secrets", justify="right")
+    table.add_column("fully leaked", justify="right")
+    for group in [scores.overall, *scores.by_source_type, *scores.by_tlp]:
+        cosine = f"{group.mean_cosine:.3f}" if group.mean_cosine is not None else "-"
+        table.add_row(
+            group.name,
+            str(group.count),
+            f"{group.exact_match_rate:.3f}",
+            f"{group.mean_token_f1:.3f}",
+            cosine,
+            f"{group.secret_recovery_rate:.3f}",
+            str(group.fully_leaked),
+        )
+    console.print(table)
+    console.print(f"corpus BLEU-4: [bold]{scores.corpus_bleu:.4f}[/]")
+    if scores.unmatched:
+        console.print(f"[yellow]{len(scores.unmatched)}[/] reconstructions had no answer-key entry")
+
+
+@invert_app.command("reidentify")
+def invert_reidentify(
+    config: ConfigOption = None,
+    overlay: OverlayOption = None,
+    embedder: Annotated[
+        str | None, typer.Option("--embedder", help="Encoder whose vectors were stolen.")
+    ] = None,
+    size: Annotated[int, typer.Option("--size", help="Sampled chunks outside the census.")] = 300,
+    seed: Annotated[int, typer.Option("--seed", help="Sampling seed.")] = DEFAULT_SEED,
+    sources: Annotated[
+        str, typer.Option("--sources", help="Public corpora the attacker rebuilds.")
+    ] = ",".join(PUBLIC_SOURCES),
+) -> None:
+    """Match stolen vectors to public documents, no corrector required.
+
+    The attack that still works on MiniLM. Uses the same seeded sample as
+    `prepare`, so the two results describe the same chunks.
+    """
+    cfg = _config(config, overlay)
+    store = factory.build_store(cfg)
+    encoder = factory.build_embedder(cfg, embedder)
+
+    sample = sample_chunks(store, size=size, seed=seed)
+    stolen = store.get_vectors(encoder.name, [chunk.id for chunk in sample.chunks])
+    if not stolen:
+        raise typer.BadParameter(
+            f"No {encoder.name!r} vectors stored for the sample; check the collection."
+        )
+
+    wanted = {name.strip() for name in sources.split(",") if name.strip()}
+    public = [source for source in factory.build_sources(cfg) if source.source_type.value in wanted]
+    if not public:
+        raise typer.BadParameter(f"No enabled sources match {sorted(wanted)}")
+
+    def documents() -> Iterator[Document]:
+        for source in public:
+            yield from source.load()
+
+    with console.status("Rebuilding the public corpus as the attacker would..."):
+        corpus, reference = build_reference(documents(), encoder)
+    console.print(f"attacker reference: [bold]{corpus.size}[/] public documents")
+
+    report = reidentify(sample.chunks, stolen, corpus, reference)
+
+    table = Table(title="Re-identification from stolen vectors")
+    table.add_column("population")
+    table.add_column("n", justify="right")
+    table.add_column("rate", justify="right")
+    table.add_row(
+        "public chunks recognised", str(report.recognisable), f"{report.top1_accuracy:.3f}"
+    )
+    table.add_row(
+        "non-public chunks whose subject leaked",
+        str(report.unrecognisable),
+        f"{report.topic_disclosure_rate:.3f}",
+    )
+    console.print(table)
+    console.print(
+        f"top-1 hits {report.recognised}/{report.recognisable}, "
+        f"topic disclosures {report.topic_hits}/{report.unrecognisable}"
+    )
 
 
 if __name__ == "__main__":
