@@ -90,9 +90,38 @@ reference recipe; checked against vec2text's own code on the live model,
 maximum absolute difference **0.0**. The retrieval encoder is untouched —
 `all-minilm` is still `sentence-transformers`, so no M1–M4 number moves.
 
-The general lesson is worth more than the fix: when an attack and a target are
-wired together only by a float array, every convention mismatch fails silently
-and in the direction of "the system is safe."
+### Four silent transforms, all pointing the same way
+
+That was not the only one. Getting a stolen vector from this index into a
+public corrector meant crossing four convention boundaries, and **not one of
+them raises an error when it is wrong**:
+
+| # | mismatch | effect if missed | how it was caught |
+|---|---|---|---|
+| 1 | sentence-transformers pooling vs. raw mean pool | cosine **0.018** — orthogonal input | read vec2text's source instead of trusting the model id |
+| 2 | 512-character chunks vs. a 32-token corrector | out-of-distribution input | read the checkpoint's `max_seq_length` |
+| 3 | Qdrant normalises on write under cosine distance | magnitudes destroyed | norms came back exactly 1.000; verified with a norm-5 probe |
+| 4 | `tokenize → decode` is lossy in sentencepiece | bundle encodes different text than the index | 26/334 cosines below 0.999 where all should have been 1.0 |
+
+Every one of them degrades the reconstruction. Every one of them therefore
+pushes the result toward "GTR resists inversion" — a *comfortable* conclusion,
+arrived at by accident, that would have been indistinguishable from a real
+finding.
+
+The general lesson is worth more than any of the fixes: **when an attack and a
+target are wired together only by a float array, mismatches fail silently and
+they fail flattering.** A negative security result is only worth as much as the
+plumbing checks behind it, so each link here was verified against ground truth
+before any number was produced — max absolute difference 0.0 against vec2text's
+own code, and cosine 1.000000 between the stored and unnormalised bundles once
+the round trip was removed.
+
+The fourth is the one that nearly slipped through, because it looked like
+rounding. The first hypothesis — float noise from dynamic padding — was wrong,
+and testing it said so (cosine 1.000000 with and without padding). Chunks whose
+token vectors nearly cancel have a near-zero mean, so a small absolute error
+there is a large relative one; the low-norm vectors were the visible casualties
+of a fault affecting all of them.
 
 ### The storage layer is quietly destroying information too
 
