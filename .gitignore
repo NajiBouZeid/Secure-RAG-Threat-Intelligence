@@ -1,7 +1,9 @@
-# Data & models (fetched by scripts, never committed)
-data/
-!data/.gitkeep
-models/
+# Data & models (fetched by scripts, never committed). Anchored to the repo
+# root: unanchored, `data/` also swallowed reports/data, so evidence dumps
+# meant to be committed were silently dropped from `git add`.
+/data/
+!/data/.gitkeep
+/models/
 *.pdf
 # Plots are regenerable binaries; metric dumps are evidence. A number quoted in
 # a report should be re-checkable without re-running the pipeline that produced it.
