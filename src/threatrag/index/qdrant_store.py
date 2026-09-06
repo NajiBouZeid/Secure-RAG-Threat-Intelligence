@@ -16,9 +16,10 @@ permitted one changes the top-k the user receives even after it is dropped.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
+import numpy as np
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qm
 
@@ -57,7 +58,9 @@ class QdrantVectorStore:
         ``update_collection`` only accepts ``VectorParamsDiff`` (hnsw and
         quantisation parameters). So all vector names are declared at creation
         time and points may carry any subset of them, which is what lets the
-        MiniLM ingest and a later GTR ingest share one chunk set.
+        MiniLM ingest and a later GTR ingest share one chunk set. Adding that
+        second vector to existing points is ``attach_vectors``; ``upsert``
+        replaces the point and would drop the first encoder's vector.
         """
         config = {
             name: qm.VectorParams(size=dim, distance=qm.Distance.COSINE)
@@ -92,6 +95,12 @@ class QdrantVectorStore:
         )
 
     def upsert(self, vector_name: str, chunks: Sequence[Chunk], vectors: Matrix) -> int:
+        """Write chunks and their vectors, replacing any point with the same id.
+
+        Qdrant replaces a point wholesale, so a point written here with only
+        ``vector_name`` loses any other named vector it held. Use
+        ``attach_vectors`` to add a second encoder's view of an indexed corpus.
+        """
         if len(chunks) != len(vectors):
             raise ValueError(f"{len(chunks)} chunks but {len(vectors)} vectors")
         if not chunks:
@@ -107,6 +116,95 @@ class QdrantVectorStore:
         ]
         self._client.upsert(self._collection, points=points, wait=True)
         return len(points)
+
+    def attach_vectors(self, vector_name: str, vectors: Mapping[str, Vector]) -> int:
+        """Add one named vector to points that already exist, keyed by chunk id.
+
+        ``update_vectors`` rather than ``upsert``: it merges into the stored
+        point, leaving the other named vectors and the payload alone. Verified
+        against a live Qdrant -- an upsert carrying one named vector really does
+        drop the other, which would silently destroy the MiniLM index that every
+        earlier milestone's numbers rest on.
+        """
+        if not vectors:
+            return 0
+
+        wanted = {_point_id(chunk_id): chunk_id for chunk_id in vectors}
+        stored = {
+            str(record.id)
+            for record in self._client.retrieve(
+                self._collection,
+                ids=list(wanted),
+                with_payload=False,
+                with_vectors=False,
+            )
+        }
+        # A vector attached to a point that does not exist would be
+        # unretrievable and unattributable, so skip rather than create.
+        points = [
+            qm.PointVectors(
+                id=point_id,
+                vector={vector_name: [float(value) for value in vectors[chunk_id]]},
+            )
+            for point_id, chunk_id in wanted.items()
+            if point_id in stored
+        ]
+        if not points:
+            return 0
+        self._client.update_vectors(self._collection, points=points, wait=True)
+        return len(points)
+
+    def scroll_chunks(
+        self, *, source_type: str | None = None, batch_size: int = 256
+    ) -> Iterator[Chunk]:
+        """Enumerate stored chunks, optionally restricted to one corpus."""
+        if not self._client.collection_exists(self._collection):
+            return
+
+        scroll_filter = None
+        if source_type is not None:
+            scroll_filter = qm.Filter(
+                must=[
+                    qm.FieldCondition(key=_SOURCE_TYPE_KEY, match=qm.MatchValue(value=source_type))
+                ]
+            )
+
+        offset: Any = None
+        while True:
+            points, offset = self._client.scroll(
+                self._collection,
+                scroll_filter=scroll_filter,
+                limit=batch_size,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            for point in points:
+                yield self._to_chunk(point.payload or {})
+            if offset is None:
+                return
+
+    def get_vectors(self, vector_name: str, chunk_ids: Sequence[str]) -> dict[str, Vector]:
+        """Read stored vectors back by chunk id: the attacker's view of a stolen index."""
+        if not chunk_ids:
+            return {}
+
+        wanted = {_point_id(chunk_id): chunk_id for chunk_id in chunk_ids}
+        records = self._client.retrieve(
+            self._collection,
+            ids=list(wanted),
+            with_payload=False,
+            with_vectors=[vector_name],
+        )
+
+        found: dict[str, Vector] = {}
+        for record in records:
+            raw = record.vector if isinstance(record.vector, dict) else None
+            values = (raw or {}).get(vector_name)
+            if values is None:
+                continue
+            found[wanted[str(record.id)]] = np.asarray(values, dtype=np.float32)
+        return found
 
     def search(
         self,

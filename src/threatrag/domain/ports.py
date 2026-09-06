@@ -7,7 +7,7 @@ those is a Protocol here and nothing above depends on a concrete class.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import Protocol, runtime_checkable
 
 from threatrag.domain.models import (
@@ -63,7 +63,32 @@ class VectorStore(Protocol):
         parameters are mutable. Points may still carry a subset of the vectors.
         """
 
-    def upsert(self, vector_name: str, chunks: Sequence[Chunk], vectors: Matrix) -> int: ...
+    def upsert(self, vector_name: str, chunks: Sequence[Chunk], vectors: Matrix) -> int:
+        """Write chunks and their vectors, *replacing* any point with the same id.
+
+        A point carrying only ``vector_name`` replaces one that held a different
+        named vector, so this is not the way to add a second encoder's view of a
+        corpus already in the index -- use ``attach_vectors`` for that.
+        """
+
+    def attach_vectors(self, vector_name: str, vectors: Mapping[str, Vector]) -> int:
+        """Add one named vector to points that already exist, keyed by chunk id.
+
+        Leaves every other named vector and the payload untouched, which
+        ``upsert`` does not: this is what actually lets one chunk set carry both
+        the MiniLM and the GTR embedding. Chunk ids with no stored point are
+        skipped rather than created, since a vector without a payload is
+        unretrievable and unattributable.
+        """
+
+    def scroll_chunks(
+        self, *, source_type: str | None = None, batch_size: int = 256
+    ) -> Iterator[Chunk]:
+        """Enumerate stored chunks, optionally restricted to one corpus."""
+
+    def get_vectors(self, vector_name: str, chunk_ids: Sequence[str]) -> dict[str, Vector]:
+        """Read stored vectors back out by chunk id -- the attacker's view of a
+        stolen index. Ids whose point lacks that named vector are omitted."""
 
     def search(
         self,
