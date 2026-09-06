@@ -89,12 +89,21 @@ def export_control(
     The answer key holds the *decoded truncated prefix*, not the full chunk.
     Scoring a 32-token vector against 512 characters would mark the
     reconstruction wrong for omitting words its vector never carried.
+
+    The vectors are embedded from the **original** text, letting the tokenizer
+    truncate, and the decoded prefix is used only as the answer key. Embedding
+    the prefix instead would push the text through a decode-and-re-encode round
+    trip, which sentencepiece does not round-trip exactly: it renormalises
+    whitespace, so the bundle would encode subtly different text from the one
+    the index holds. Measured on a real chunk, that shifted the vector's norm
+    from 0.3731 to 0.386 and cost 5% of the cosine against the stored vector --
+    enough to contaminate the very comparison these bundles exist to make.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     chunks = list(sample.chunks)
     prefixes = [embedder.tokenized_prefix(chunk.text) for chunk in chunks]
     matrix = (
-        embedder.embed_documents(prefixes).astype(np.float32)
+        embedder.embed_documents([chunk.text for chunk in chunks]).astype(np.float32)
         if chunks
         else np.empty((0, 0), dtype=np.float32)
     )

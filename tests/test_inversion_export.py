@@ -163,13 +163,16 @@ def test_the_control_answer_key_holds_the_truncated_prefix(tmp_path: Path) -> No
     assert record["text"] == "alpha beta gamma delta"
 
 
-def test_the_control_embeds_the_prefix_not_the_full_chunk(tmp_path: Path) -> None:
+def test_the_control_embeds_the_original_text_not_the_decoded_prefix(tmp_path: Path) -> None:
+    """Embedding the decoded prefix pushes the text through a lossy
+    decode-and-re-encode round trip, so the bundle would encode subtly
+    different text from the one the index holds."""
     chunk = _chunk(0, text="alpha beta gamma delta epsilon zeta")
     embedder = TruncatingStub()
 
     export_control(_sample([chunk]), embedder, out_dir=tmp_path, variant="len32_unnormalized")
 
-    assert embedder.seen == ["alpha beta gamma delta"]
+    assert embedder.seen == ["alpha beta gamma delta epsilon zeta"]
 
 
 def test_control_secret_terms_drop_out_when_truncated_away(tmp_path: Path) -> None:
