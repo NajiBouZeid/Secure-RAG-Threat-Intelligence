@@ -7,6 +7,7 @@ benchmark runner would need to duplicate.
 
 from __future__ import annotations
 
+import json
 import sys
 from collections.abc import Iterator
 from pathlib import Path
@@ -554,6 +555,10 @@ def invert_reidentify(
     sources: Annotated[
         str, typer.Option("--sources", help="Public corpora the attacker rebuilds.")
     ] = ",".join(PUBLIC_SOURCES),
+    dump: Annotated[
+        Path | None,
+        typer.Option("--dump", help="Write the per-chunk rows as JSON evidence."),
+    ] = None,
 ) -> None:
     """Match stolen vectors to public documents, no corrector required.
 
@@ -623,6 +628,17 @@ def invert_reidentify(
         f"subject leaked {report.topic_hits}/{report.unrecognisable}, "
         f"identifier quoted outright {report.ref_hits}/{report.unrecognisable}"
     )
+
+    if dump is not None:
+        # Per-chunk rows carry the nearest public document and its score but no
+        # chunk text, so the evidence behind a published rate is checkable
+        # without the note bodies leaving data/.
+        dump.parent.mkdir(parents=True, exist_ok=True)
+        dump.write_text(
+            json.dumps(report.model_dump(mode="json"), indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        console.print(f"wrote {len(report.rows)} rows to [bold]{dump}[/]")
 
 
 if __name__ == "__main__":
