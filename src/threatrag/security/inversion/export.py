@@ -1,0 +1,121 @@
+"""Packaging the attacker's view of the index for an off-machine inversion run.
+
+Two bundles, deliberately separated. ``vectors.npy`` and ``vector_ids.json``
+are the attack input and hold nothing but numbers and opaque ids: that is
+exactly what someone who stole the collection's vectors would have, and it is
+what gets uploaded to whatever GPU runs vec2text. ``truth.jsonl`` never leaves
+this machine -- it is the answer key, and scoring against it happens locally.
+
+Handing the reconstruction step the source text would make the result circular,
+so the split is a property of the experiment rather than tidiness.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+from pydantic import BaseModel, Field
+
+from threatrag.domain.ports import VectorStore
+from threatrag.security.inversion.sample import SampleReport, secret_terms
+
+VECTORS_FILE = "vectors.npy"
+IDS_FILE = "vector_ids.json"
+TRUTH_FILE = "truth.jsonl"
+MANIFEST_FILE = "manifest.json"
+
+
+class ExportManifest(BaseModel):
+    """What was exported, and what was asked for but not there."""
+
+    vector_name: str
+    dim: int
+    exported: int
+    missing: list[str] = Field(default_factory=list)
+    seed: int = 0
+    population: dict[str, int] = Field(default_factory=dict)
+    selected: dict[str, int] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    @property
+    def upload_files(self) -> tuple[str, str]:
+        """The only two files that may leave the machine."""
+        return (VECTORS_FILE, IDS_FILE)
+
+
+def export_targets(
+    store: VectorStore,
+    sample: SampleReport,
+    *,
+    vector_name: str,
+    out_dir: Path,
+) -> ExportManifest:
+    """Read the sampled vectors back out of the index and write the bundles.
+
+    Vectors are read from the store rather than recomputed, so what is attacked
+    is the value actually sitting in the database -- including whatever
+    precision Qdrant stored it at -- and not a fresh embedding that happens to
+    agree with it.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    chunk_ids = [chunk.id for chunk in sample.chunks]
+    found = store.get_vectors(vector_name, chunk_ids)
+
+    ordered = [chunk for chunk in sample.chunks if chunk.id in found]
+    missing = [chunk_id for chunk_id in chunk_ids if chunk_id not in found]
+
+    dim = int(next(iter(found.values())).shape[0]) if found else 0
+    matrix = (
+        np.stack([found[chunk.id] for chunk in ordered]).astype(np.float32)
+        if ordered
+        else np.empty((0, dim), dtype=np.float32)
+    )
+    np.save(out_dir / VECTORS_FILE, matrix)
+
+    _write_json(out_dir / IDS_FILE, [chunk.id for chunk in ordered])
+
+    with (out_dir / TRUTH_FILE).open("w", encoding="utf-8", newline="\n") as handle:
+        for chunk in ordered:
+            record = {
+                "chunk_id": chunk.id,
+                "doc_id": chunk.doc_id,
+                "source_type": chunk.source_type.value,
+                "source_ref": chunk.source_ref,
+                "title": chunk.title,
+                "tlp": chunk.tlp.value,
+                "text": chunk.text,
+                "secret_terms": secret_terms(chunk),
+            }
+            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    manifest = ExportManifest(
+        vector_name=vector_name,
+        dim=dim,
+        exported=len(ordered),
+        missing=missing,
+        seed=sample.seed,
+        population=sample.population,
+        selected=sample.selected,
+    )
+    _write_json(out_dir / MANIFEST_FILE, manifest.model_dump(mode="json"))
+    return manifest
+
+
+def load_truth(path: Path) -> dict[str, dict[str, Any]]:
+    """Read the answer key back, keyed by chunk id."""
+    truth: dict[str, dict[str, Any]] = {}
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            truth[str(record["chunk_id"])] = record
+    return truth
+
+
+def _write_json(path: Path, payload: Any) -> None:
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

@@ -1,0 +1,132 @@
+"""Export of the attack bundle and the answer key.
+
+The split is the thing under test: the files that leave the machine must carry
+vectors and ids only. Handing the reconstruction step the source text would
+make any reconstruction rate it produced meaningless.
+"""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Sequence
+from pathlib import Path
+
+import numpy as np
+
+from threatrag.domain.models import TLP, Chunk, SourceType
+from threatrag.domain.types import Vector
+from threatrag.security.inversion.export import (
+    IDS_FILE,
+    TRUTH_FILE,
+    VECTORS_FILE,
+    export_targets,
+    load_truth,
+)
+from threatrag.security.inversion.sample import SampleReport
+
+
+def _chunk(index: int, text: str = "secret body", tlp: TLP = TLP.CLEAR) -> Chunk:
+    return Chunk(
+        id=f"c-{index}#0",
+        doc_id=f"c-{index}",
+        ordinal=0,
+        text=text,
+        title=f"title {index}",
+        source_type=SourceType.INTERNAL_NOTE,
+        source_ref=f"INT-{index}",
+        tlp=tlp,
+        metadata={"secret_terms": ["41 repositories"]},
+    )
+
+
+class VectorStub:
+    def __init__(self, vectors: dict[str, Vector]) -> None:
+        self.vectors = vectors
+
+    def get_vectors(self, vector_name: str, chunk_ids: Sequence[str]) -> dict[str, Vector]:
+        return {cid: self.vectors[cid] for cid in chunk_ids if cid in self.vectors}
+
+
+def _sample(chunks: list[Chunk]) -> SampleReport:
+    return SampleReport(seed=7, requested=len(chunks), chunks=chunks)
+
+
+def test_the_uploaded_bundle_carries_no_source_text(tmp_path: Path) -> None:
+    chunks = [_chunk(0, text="TLP:RED payment approval matrix")]
+    store = VectorStub({chunks[0].id: np.ones(4, dtype=np.float32)})
+
+    export_targets(store, _sample(chunks), vector_name="gtr-base", out_dir=tmp_path)
+
+    uploaded = (tmp_path / IDS_FILE).read_text(encoding="utf-8")
+    assert "payment approval matrix" not in uploaded
+    assert json.loads(uploaded) == [chunks[0].id]
+
+
+def test_vectors_are_written_in_the_order_of_the_ids(tmp_path: Path) -> None:
+    chunks = [_chunk(0), _chunk(1)]
+    store = VectorStub(
+        {
+            chunks[0].id: np.array([1, 0, 0, 0], dtype=np.float32),
+            chunks[1].id: np.array([0, 1, 0, 0], dtype=np.float32),
+        }
+    )
+
+    export_targets(store, _sample(chunks), vector_name="gtr-base", out_dir=tmp_path)
+
+    ids = json.loads((tmp_path / IDS_FILE).read_text(encoding="utf-8"))
+    matrix = np.load(tmp_path / VECTORS_FILE)
+    assert ids == [chunks[0].id, chunks[1].id]
+    assert matrix[ids.index(chunks[1].id)].tolist() == [0, 1, 0, 0]
+
+
+def test_chunks_without_that_named_vector_are_reported_not_dropped_silently(
+    tmp_path: Path,
+) -> None:
+    """Most of the index carries MiniLM only; a partial backfill must be visible."""
+    chunks = [_chunk(0), _chunk(1)]
+    store = VectorStub({chunks[0].id: np.ones(4, dtype=np.float32)})
+
+    manifest = export_targets(store, _sample(chunks), vector_name="gtr-base", out_dir=tmp_path)
+
+    assert manifest.exported == 1
+    assert manifest.missing == [chunks[1].id]
+
+
+def test_the_answer_key_keeps_the_text_and_the_secret_terms(tmp_path: Path) -> None:
+    chunks = [_chunk(0, text="TLP:RED payment approval matrix", tlp=TLP.RED)]
+    store = VectorStub({chunks[0].id: np.ones(4, dtype=np.float32)})
+
+    export_targets(store, _sample(chunks), vector_name="gtr-base", out_dir=tmp_path)
+
+    truth = load_truth(tmp_path / TRUTH_FILE)
+    record = truth[chunks[0].id]
+    assert record["text"] == "TLP:RED payment approval matrix"
+    assert record["tlp"] == "red"
+    assert record["secret_terms"] == ["INT-0", "41 repositories"]
+
+
+def test_the_manifest_records_the_sampling_method(tmp_path: Path) -> None:
+    chunks = [_chunk(0)]
+    store = VectorStub({chunks[0].id: np.ones(4, dtype=np.float32)})
+    sample = SampleReport(
+        seed=99,
+        requested=1,
+        population={"internal_note": 34},
+        selected={"internal_note": 1},
+        chunks=chunks,
+    )
+
+    manifest = export_targets(store, sample, vector_name="gtr-base", out_dir=tmp_path)
+
+    assert manifest.seed == 99
+    assert manifest.population == {"internal_note": 34}
+    assert manifest.dim == 4
+    assert manifest.upload_files == (VECTORS_FILE, IDS_FILE)
+
+
+def test_an_empty_sample_still_writes_a_readable_bundle(tmp_path: Path) -> None:
+    manifest = export_targets(VectorStub({}), _sample([]), vector_name="gtr-base", out_dir=tmp_path)
+
+    assert manifest.exported == 0
+    assert np.load(tmp_path / VECTORS_FILE).shape[0] == 0
+    assert load_truth(tmp_path / TRUTH_FILE) == {}
