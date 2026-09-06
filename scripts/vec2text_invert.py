@@ -38,12 +38,41 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
+import types
 from pathlib import Path
 
 VECTORS_FILE = "vectors.npy"
 IDS_FILE = "vector_ids.json"
 OUTPUT_FILE = "reconstructions.jsonl"
+
+
+def stub_resource_module() -> None:
+    """Make vec2text importable on Windows.
+
+    vec2text's package import reaches `experiments.py`, which imports the
+    Unix-only stdlib module `resource`, so `import vec2text` fails outright on
+    Windows before any model is touched. It is the only Unix-only import in the
+    package and it is used in exactly one place -- raising the core-dump limit
+    inside a training entrypoint this script never calls.
+
+    So the stub carries the three names that line touches and does nothing.
+    This is narrow on purpose: it removes an import-time platform assumption,
+    not a behaviour. If a future vec2text uses `resource` for something real,
+    the call lands on a no-op that returns a plausible value, so the guard
+    below asserts the module is genuinely absent rather than shadowing a real
+    one on a platform that has it.
+    """
+    if sys.platform != "win32" or "resource" in sys.modules:
+        return
+
+    stub = types.ModuleType("resource")
+    stub.RLIMIT_CORE = 4  # type: ignore[attr-defined]
+    stub.RLIM_INFINITY = -1  # type: ignore[attr-defined]
+    stub.setrlimit = lambda *args, **kwargs: None  # type: ignore[attr-defined]
+    stub.getrlimit = lambda *args, **kwargs: (-1, -1)  # type: ignore[attr-defined]
+    sys.modules["resource"] = stub
 
 
 def parse_args() -> argparse.Namespace:
@@ -80,6 +109,8 @@ def main() -> None:
 
     import numpy as np
     import torch
+
+    stub_resource_module()
     import vec2text
 
     ids: list[str] = json.loads((args.in_dir / IDS_FILE).read_text(encoding="utf-8"))
