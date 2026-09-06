@@ -94,25 +94,48 @@ The general lesson is worth more than the fix: when an attack and a target are
 wired together only by a float array, every convention mismatch fails silently
 and in the direction of "the system is safe."
 
-### Two bundles, because a weak result has two causes
+### The storage layer is quietly destroying information too
 
-The only public GTR corrector was trained on **32-token** Natural Questions
-passages, and these chunks are 512 characters — three to four times longer. So
-a weak reconstruction on the main bundle would be ambiguous between *the attack
-does not work* and *the text is longer than the attack was built for*, which
-mean opposite things for a defender.
+A Qdrant collection using **cosine distance normalises vectors on write**.
+Verified against a live instance: store `[3, 4, 0]`, read back `[0.6, 0.8, 0]`;
+the same collection built with dot distance returns it intact.
 
-| bundle | vectors | measures |
-|---|---|---|
-| `data/inversion/` | full chunk, mean-pooled | the realistic attack on the index as it stands |
-| `data/inversion/control/` | first 32 tokens | the same attack at the length the corrector was fitted for — the upper bound |
+So an attacker who steals *this* index gets directions, not magnitudes — and
+the corrector was trained on unnormalised embeddings. That is a third silent
+transform sitting between the attack and its target, after the wrong pooling
+and the wrong sequence length.
 
-The control's answer key holds the *decoded 32-token prefix*, not the full
+It is a genuine property of the deployment, not a mistake to correct, so the
+realistic bundle keeps it. But it should not be sold as a defence either: it is
+an incidental side effect of a distance-metric choice, it costs the attacker
+magnitude only, and any index built with dot distance gives it up for free.
+
+### Three bundles, because a weak result has three possible causes
+
+The corrector was trained on **32-token** passages and these chunks are 512
+characters, so a weak reconstruction could mean *the attack does not work*,
+*the text is longer than the attack was built for*, or *the magnitudes are
+gone* — which imply very different things for a defender. Left confounded, the
+result could be argued either way. Each bundle removes one variable:
+
+| bundle | length | magnitudes | measures |
+|---|---|---|---|
+| `data/inversion/` | full chunk | normalised by Qdrant | the realistic attack on the index as it stands |
+| `data/inversion/control/` | first 32 tokens | preserved | the corrector's own training conditions — the upper bound |
+| `data/inversion/unnormalized/` | full chunk | preserved | isolates lost magnitude from chunk length |
+
+Every manifest records its `variant`, because a reconstruction rate is
+uninterpretable without knowing which bundle produced it.
+
+The 32-token bundle's answer key holds the *decoded prefix*, not the full
 chunk, and drops secret terms that fall past the budget: scoring a 32-token
 vector against 512 characters would mark the reconstruction wrong for omitting
-words its vector never carried. **The gap between the two is the finding** —
-if the control inverts well and the main bundle does not, then chunk length is
-itself doing the defending, which is a result M6 can act on.
+words its vector never carried.
+
+**The gaps between the three are the finding.** If the control inverts well and
+the stored bundle does not, then chunk length and cosine normalisation are
+doing the defending — accidentally — and that is something M6 can turn into a
+deliberate, measurable control.
 
 ## Attack 2 — re-identification (MiniLM): the corrector-free attack, run live
 
