@@ -43,11 +43,12 @@ def _base_config() -> Config:
     )
 
 
-def _result(label: str, model: str) -> CellResult:
+def _result(label: str, model: str, repeat: int = 1) -> CellResult:
     return CellResult(
         label=label,
         defenses=[],
         model=model,
+        repeat=repeat,
         routes=[RouteResult(corpus="m4", landed=1, total=7, survivors=["inj-003"])],
         answers={"answer_utility": 0.5},
         retrieval=None,
@@ -61,10 +62,10 @@ def test_the_defence_set_varies_slowest() -> None:
     cells = build_cells(DEFENCE_SETS, MODELS)
 
     assert [c.key for c in cells[:4]] == [
-        "none@qwen2.5:7b",
-        "none@qwen2.5:1.5b",
-        "injection_screen@qwen2.5:7b",
-        "injection_screen@qwen2.5:1.5b",
+        "none@qwen2.5:7b#1",
+        "none@qwen2.5:1.5b#1",
+        "injection_screen@qwen2.5:7b#1",
+        "injection_screen@qwen2.5:1.5b#1",
     ]
     assert len(cells) == 6
 
@@ -106,7 +107,7 @@ def test_results_are_readable_after_every_cell(tmp_path: Path) -> None:
     writer.write(_result("none", "qwen2.5:7b"))
     writer.write(_result("none", "qwen2.5:1.5b"))
 
-    assert writer.completed() == {"none@qwen2.5:7b", "none@qwen2.5:1.5b"}
+    assert writer.completed() == {"none@qwen2.5:7b#1", "none@qwen2.5:1.5b#1"}
 
 
 def test_an_interrupted_sweep_resumes_where_it_stopped(tmp_path: Path) -> None:
@@ -115,7 +116,7 @@ def test_an_interrupted_sweep_resumes_where_it_stopped(tmp_path: Path) -> None:
 
     remaining = [c.key for c in iter_cells(build_cells(DEFENCE_SETS, MODELS), writer)]
 
-    assert "none@qwen2.5:7b" not in remaining
+    assert "none@qwen2.5:7b#1" not in remaining
     assert len(remaining) == 5
 
 
@@ -150,3 +151,29 @@ def test_routes_survive_the_json_round_trip(tmp_path: Path) -> None:
     row = writer.path.read_text(encoding="utf-8").strip()
     assert '"survivors": ["inj-003"]' in row
     assert '"success_rate"' in row
+
+
+def test_repeats_are_separate_cells(tmp_path: Path) -> None:
+    """One attack in the corpus is not reproducible: exf-002 on qwen2.5:1.5b
+    landed three times running and was then blocked five times running under an
+    identical configuration, with retrieval verified stable. A single run per
+    cell would present that coin flip as a defence effect."""
+    cells = build_cells(DEFENCE_SETS, MODELS, repeats=3)
+
+    assert len(cells) == 18
+    assert [c.key for c in cells[:3]] == [
+        "none@qwen2.5:7b#1",
+        "none@qwen2.5:7b#2",
+        "none@qwen2.5:7b#3",
+    ]
+
+
+def test_one_finished_repeat_does_not_skip_the_others(tmp_path: Path) -> None:
+    writer = ResultWriter(tmp_path / "sweep.jsonl")
+    writer.write(_result("none", "qwen2.5:7b", repeat=2))
+
+    remaining = [c.key for c in iter_cells(build_cells(DEFENCE_SETS, MODELS, 3), writer)]
+
+    assert "none@qwen2.5:7b#2" not in remaining
+    assert "none@qwen2.5:7b#1" in remaining
+    assert "none@qwen2.5:7b#3" in remaining

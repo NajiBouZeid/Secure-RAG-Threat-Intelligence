@@ -51,10 +51,11 @@ class Cell:
     label: str
     overlay: Path | None
     model: str
+    repeat: int = 1
 
     @property
     def key(self) -> str:
-        return f"{self.label}@{self.model}"
+        return f"{self.label}@{self.model}#{self.repeat}"
 
 
 @dataclass
@@ -76,6 +77,7 @@ class CellResult:
     label: str
     defenses: list[str]
     model: str
+    repeat: int
     routes: list[RouteResult]
     answers: dict[str, float | int]
     retrieval: dict[str, float | int] | None
@@ -156,7 +158,7 @@ class ResultWriter:
         for line in self._path.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 row = json.loads(line)
-                done.add(f"{row['label']}@{row['model']}")
+                done.add(f"{row['label']}@{row['model']}#{row.get('repeat', 1)}")
         return done
 
     def write(self, result: CellResult) -> None:
@@ -165,18 +167,29 @@ class ResultWriter:
 
 
 def build_cells(
-    defence_sets: Sequence[tuple[str, Path | None]], models: Sequence[str]
+    defence_sets: Sequence[tuple[str, Path | None]],
+    models: Sequence[str],
+    repeats: int = 1,
 ) -> list[Cell]:
-    """Every defence set under every model, defence set varying slowest.
+    """Every defence set under every model, repeated, defence set varying slowest.
 
     Slowest on purpose: a partial sweep then covers every defence set for the
     first model rather than half the defence sets for both, which is the half
     that can still be read as a result.
+
+    ``repeats`` exists because one attack in the corpus turned out not to be
+    reproducible. exf-002 on qwen2.5:1.5b landed three times running, then was
+    blocked five times running under the identical configuration, with retrieval
+    verified stable and generation deterministic within each session. The cause
+    was never isolated. Reporting a single run per cell would present that
+    coin-flip as a defence effect, so the honest alternative is to run each cell
+    several times and report the agreement.
     """
     return [
-        Cell(label=label, overlay=overlay, model=model)
+        Cell(label=label, overlay=overlay, model=model, repeat=repeat)
         for label, overlay in defence_sets
         for model in models
+        for repeat in range(1, repeats + 1)
     ]
 
 

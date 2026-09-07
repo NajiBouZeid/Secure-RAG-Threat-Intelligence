@@ -776,6 +776,9 @@ def benchmark(
             "--sink-port", help="Exfiltration sink port; 0 for ephemeral (not reproducible)."
         ),
     ] = DEFAULT_SINK_PORT,
+    repeats: Annotated[
+        int, typer.Option("--repeats", help="Runs per cell; >1 exposes unstable attacks.")
+    ] = 1,
 ) -> None:
     """Sweep defence sets x models over both attack corpora and the utility axes.
 
@@ -796,7 +799,9 @@ def benchmark(
     if out.exists() and fresh:
         out.unlink()
     writer = ResultWriter(out)
-    cells = build_cells(list(SWEEP_SETS), [m.strip() for m in models.split(",") if m.strip()])
+    cells = build_cells(
+        list(SWEEP_SETS), [m.strip() for m in models.split(",") if m.strip()], repeats
+    )
     pending = list(iter_cells(cells, writer))
     console.print(
         f"{len(pending)} of {len(cells)} cells to run "
@@ -855,6 +860,7 @@ def benchmark(
             label=cell.label,
             defenses=list(cfg.defenses),
             model=cell.model,
+            repeat=cell.repeat,
             routes=routes,
             answers=answers.as_row(),
             retrieval=retrieval_cache[cell.label],
