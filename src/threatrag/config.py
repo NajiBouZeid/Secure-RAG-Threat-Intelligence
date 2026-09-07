@@ -94,6 +94,24 @@ class GenerationConfig(BaseModel):
     max_context_chars: int = 12000
 
 
+class InjectionScreenConfig(BaseModel):
+    """D4: reject documents that address the assistant rather than describe a threat."""
+
+    # Extra regexes, applied case-insensitively on top of the built-in set.
+    extra_patterns: list[str] = Field(default_factory=list)
+
+
+class DefenseSettings(BaseModel):
+    """Per-defence parameters.
+
+    Separate from ``defenses`` on purpose: that list is pure membership, so a
+    benchmark cell toggles a mitigation without restating its tuning, and a
+    parameter sweep changes tuning without touching membership.
+    """
+
+    injection_screen: InjectionScreenConfig = Field(default_factory=InjectionScreenConfig)
+
+
 class PrincipalConfig(BaseModel):
     """A demo identity for the API and UI.
 
@@ -132,6 +150,7 @@ class Config(BaseModel):
     principals: dict[str, PrincipalConfig] = Field(default_factory=dict)
     sources: dict[str, dict[str, Any]] = Field(default_factory=dict)
     defenses: list[str] = Field(default_factory=list)
+    defense_settings: DefenseSettings = Field(default_factory=DefenseSettings)
 
 
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
