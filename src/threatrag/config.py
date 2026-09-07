@@ -122,6 +122,17 @@ class ProvenanceFenceConfig(BaseModel):
     min_tier: TrustTier = TrustTier.VENDOR
 
 
+class EgressFilterConfig(BaseModel):
+    """D3: hosts whose URLs may survive into a rendered answer.
+
+    Empty by default. A permissive default would make the defence look free
+    while leaving open hosts an attacker can reach, and the cost of severing
+    citation links is exactly what M7 exists to price.
+    """
+
+    allowed_hosts: list[str] = Field(default_factory=list)
+
+
 class DefenseSettings(BaseModel):
     """Per-defence parameters.
 
@@ -133,6 +144,7 @@ class DefenseSettings(BaseModel):
     injection_screen: InjectionScreenConfig = Field(default_factory=InjectionScreenConfig)
     source_cap: SourceCapConfig = Field(default_factory=SourceCapConfig)
     provenance_fence: ProvenanceFenceConfig = Field(default_factory=ProvenanceFenceConfig)
+    egress_filter: EgressFilterConfig = Field(default_factory=EgressFilterConfig)
 
 
 class PrincipalConfig(BaseModel):

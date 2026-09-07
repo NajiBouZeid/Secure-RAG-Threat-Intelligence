@@ -38,11 +38,17 @@ def _install() -> None:
     Imported here rather than at module scope so the registry stays the single
     place the canonical order is written down.
     """
-    from threatrag.security.defenses import injection_screen, provenance_fence, source_cap
+    from threatrag.security.defenses import (
+        egress_filter,
+        injection_screen,
+        provenance_fence,
+        source_cap,
+    )
 
     register("injection_screen", injection_screen.build)
     register("source_cap", source_cap.build)
     register("provenance_fence", provenance_fence.build)
+    register("egress_filter", egress_filter.build)
 
 
 def available() -> tuple[str, ...]:
