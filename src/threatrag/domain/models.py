@@ -130,6 +130,11 @@ class Answer(BaseModel):
     # source. Recorded rather than suppressed so M7 can measure groundedness
     # instead of a defence quietly hiding the evidence of its absence.
     unsupported_citations: list[str] = Field(default_factory=list)
+    # URLs a defence removed before the answer could be rendered. Recorded
+    # rather than merely dropped: an empty sink log cannot distinguish an
+    # exfiltration that was blocked from one that was never attempted, and M7
+    # needs to count the first.
+    stripped_urls: list[str] = Field(default_factory=list)
     model: str = ""
     defenses_applied: list[str] = Field(default_factory=list)
     blocked: bool = False
