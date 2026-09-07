@@ -37,15 +37,18 @@ def test_sends_system_and_user_turns_with_pinned_options() -> None:
         seen.update(json.loads(request.content))
         return httpx.Response(200, json={"message": {"content": "ok"}})
 
-    _generator(handler, temperature=0.0, num_ctx=4096).generate("SYS", "USER")
+    _generator(handler, temperature=0.0, num_ctx=4096, num_predict=256).generate("SYS", "USER")
 
     assert seen["messages"] == [
         {"role": "system", "content": "SYS"},
         {"role": "user", "content": "USER"},
     ]
-    # Streaming off and a pinned context window are what make a run reproducible.
+    # Streaming off and pinned context bounds are what make a run reproducible.
+    # num_predict is bounded for the same reason num_ctx is: the input was
+    # capped and the output was not, and an unbounded generation can run until
+    # it fills the window -- which took down an M7 sweep.
     assert seen["stream"] is False
-    assert seen["options"] == {"temperature": 0.0, "num_ctx": 4096}
+    assert seen["options"] == {"temperature": 0.0, "num_ctx": 4096, "num_predict": 256}
 
 
 def test_missing_model_names_the_pull_command() -> None:
