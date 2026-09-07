@@ -102,4 +102,28 @@ sources:
     enabled: true
     manifest: corpora/vendor_reports.yaml
 
-defenses: []                 # names of enabled defences; empty = undefended baseline
+# Names of enabled defences; empty is the undefended M4/M5 baseline. Membership
+# only -- tuning lives in defense_settings, so a benchmark cell can toggle a
+# mitigation without restating its parameters. Order here is ignored: the
+# registry fixes the order defences run in, so {a, b} and {b, a} are one cell.
+#
+#   injection_screen    reject documents that instruct the reader (ingest)
+#   source_cap          limit how many passages one document may contribute
+#   provenance_fence    frame low-trust passages as quoted data, not prose
+#   egress_filter       strip outbound URLs from the answer
+#   corpus_segregation  write classified chunks to a separate collection
+defenses: []
+
+defense_settings:
+  source_cap:
+    max_per_document: 2
+  provenance_fence:
+    # Fences VENDOR and below. Fencing only UNTRUSTED would frame nothing but
+    # the attack corpus and make the defence free by construction.
+    min_tier: 1
+  egress_filter:
+    # Empty severs every outbound link, including the citation URLs an analyst
+    # uses to check a claim by hand. That cost is the point of the dial.
+    allowed_hosts: []
+  injection_screen:
+    extra_patterns: []

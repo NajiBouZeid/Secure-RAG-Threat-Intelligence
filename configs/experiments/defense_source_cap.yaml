@@ -1,0 +1,7 @@
+# One defence, alone, so M7 can attribute an effect to it rather than to a
+# bundle. Deep-merges over configs/base.yaml.
+defenses: [source_cap]
+retrieval:
+  # A cap with no headroom only deletes; with headroom it promotes the next
+  # document into the slot it freed.
+  overfetch: 3

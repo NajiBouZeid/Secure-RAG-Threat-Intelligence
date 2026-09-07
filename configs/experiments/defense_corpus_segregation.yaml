@@ -1,0 +1,10 @@
+# D5 changes where chunks are written, so this overlay describes an index
+# that must be built with it already enabled -- `ingest` under this overlay
+# routes classified chunks to the restricted collection. Pointing it at an
+# index ingested without it would find the notes in the public collection,
+# which is the arrangement it exists to prevent.
+defenses: [corpus_segregation]
+vector_store:
+  collection: threatrag_public
+  restricted_collection: threatrag_restricted
+  restrict_above: green
