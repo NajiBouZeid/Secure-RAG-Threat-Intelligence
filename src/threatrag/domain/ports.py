@@ -100,6 +100,14 @@ class VectorStore(Protocol):
 
     def count(self) -> int: ...
 
+    def count_with_vector(self, vector_name: str) -> int:
+        """How many points carry this named vector, rather than merely exist.
+
+        A second encoder's vectors are attached to a subset of the corpus, and
+        an ``upsert`` over those points drops them without erroring, so the
+        count is the only evidence that a backfill is still intact.
+        """
+
     def delete_by_source_type(self, source_type: str) -> int: ...
 
 

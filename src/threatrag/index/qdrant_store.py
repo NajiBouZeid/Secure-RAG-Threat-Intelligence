@@ -234,6 +234,25 @@ class QdrantVectorStore:
             return 0
         return int(self._client.count(self._collection, exact=True).count)
 
+    def count_with_vector(self, vector_name: str) -> int:
+        """How many points carry this named vector.
+
+        Points may hold any subset of the collection's named vectors, so this
+        is the only way to tell a backfilled corpus from an untouched one.
+        ``upsert`` replaces a point wholesale, so a re-ingest under the primary
+        encoder silently drops a second encoder's vectors -- and nothing about
+        the write reports it. Callers check this before and after to say so.
+        """
+        if not self._client.collection_exists(self._collection):
+            return 0
+        return int(
+            self._client.count(
+                self._collection,
+                count_filter=qm.Filter(must=[qm.HasVectorCondition(has_vector=vector_name)]),
+                exact=True,
+            ).count
+        )
+
     def delete_by_source_type(self, source_type: str) -> int:
         """Remove a whole corpus. Used to reset poisoned documents between trials."""
         if not self._client.collection_exists(self._collection):

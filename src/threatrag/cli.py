@@ -184,6 +184,25 @@ def ingest(
             f"a second encoder's vectors, or point vector_store.collection somewhere else."
         )
 
+    # The guard above catches writing the *wrong* encoder. This catches the
+    # mirror case, which is the one that actually bit: re-ingesting a source
+    # under the primary encoder replaces those points and drops any second
+    # encoder's vectors attached to them by `invert prepare`. Nothing errors --
+    # the ingest reports success and the inversion corpus is quietly gone. The
+    # re-ingest is legitimate, so this warns and names the repair rather than
+    # refusing.
+    written = embedder or cfg.embedding.primary
+    secondary = sorted(name for name in cfg.embedding.models if name != written)
+    before = {name: store.count_with_vector(name) for name in secondary}
+    at_risk = {name: count for name, count in before.items() if count > 0}
+    if at_risk:
+        for name, count in at_risk.items():
+            console.print(
+                f"[yellow]warning[/] {count} points carry {name!r} vectors. Re-ingesting "
+                f"replaces the points it writes and drops that vector from them; "
+                f"`threatrag invert prepare --embedder {name}` re-attaches it."
+            )
+
     stats = IngestStats()
     for source in sources:
         # Chunk ids are content-addressed, so re-ingesting with a different
@@ -203,6 +222,16 @@ def ingest(
     table.add_row("documents rejected", str(stats.documents_rejected))
     table.add_row("chunks indexed", str(stats.chunks_indexed))
     console.print(table)
+
+    # Report the damage rather than leaving it to be discovered by a scoring
+    # run that silently drops those chunks.
+    for name, was in at_risk.items():
+        now = store.count_with_vector(name)
+        if now < was:
+            console.print(
+                f"[red]dropped[/] {was - now} {name!r} vectors ({now} left). Run "
+                f"`threatrag invert prepare --embedder {name}` to re-attach them."
+            )
 
 
 @app.command(name="build-goldset")

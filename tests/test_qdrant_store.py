@@ -11,6 +11,7 @@ every earlier milestone's numbers rest on.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -83,6 +84,14 @@ class FakeClient:
                 vector = {n: stored["vectors"][n] for n in names if n in stored["vectors"]}
             records.append(FakeRecord(str(point_id), vector, stored["payload"]))
         return records
+
+    def count(self, collection: str, count_filter: Any = None, exact: bool = True) -> Any:
+        self.calls.append("count")
+        points = self.points.values()
+        if count_filter is not None:
+            wanted = count_filter.must[0].has_vector
+            points = [p for p in points if wanted in p["vectors"]]
+        return SimpleNamespace(count=len(list(points)))
 
     def scroll(
         self,
@@ -184,3 +193,28 @@ def test_scroll_chunks_pages_until_the_offset_is_exhausted(store: QdrantVectorSt
     refs = [chunk.source_ref for chunk in store.scroll_chunks(batch_size=1)]
 
     assert refs == ["T1055", "T1003"]
+
+
+def test_count_with_vector_counts_carriers_not_points(store: QdrantVectorStore) -> None:
+    """Most of the index is MiniLM-only; the GTR backfill is a subset of it."""
+    chunks = [_chunk("T1055"), _chunk("T1003")]
+    store.upsert("all-minilm", chunks, np.ones((2, 3), dtype=np.float32))
+    store.attach_vectors("gtr-base", {chunks[0].id: np.zeros(4, dtype=np.float32)})
+
+    assert store.count() == 2
+    assert store.count_with_vector("all-minilm") == 2
+    assert store.count_with_vector("gtr-base") == 1
+
+
+def test_count_with_vector_sees_the_drop_an_upsert_causes(store: QdrantVectorStore) -> None:
+    """The M5 footgun, pinned: re-ingesting a backfilled chunk erases its GTR
+    vector, and no write reports it. This count is the only witness."""
+    chunk = _chunk("T1055")
+    store.upsert("all-minilm", [chunk], np.ones((1, 3), dtype=np.float32))
+    store.attach_vectors("gtr-base", {chunk.id: np.zeros(4, dtype=np.float32)})
+    assert store.count_with_vector("gtr-base") == 1
+
+    store.upsert("all-minilm", [chunk], np.ones((1, 3), dtype=np.float32))
+
+    assert store.count_with_vector("gtr-base") == 0
+    assert store.count() == 1
