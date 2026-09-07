@@ -26,7 +26,7 @@ from threatrag.eval.metrics import aggregate, score_query
 from threatrag.ingest.pipeline import IngestStats
 from threatrag.ingest.sources.nvd_api import NVD_ATTRIBUTION
 from threatrag.security.attacks.loader import DEFAULT_ATTACK_DIR, load_attacks
-from threatrag.security.attacks.sink import ExfiltrationSink
+from threatrag.security.attacks.sink import DEFAULT_SINK_PORT, ExfiltrationSink
 from threatrag.security.inversion.backfill import backfill_vectors
 from threatrag.security.inversion.export import (
     TRUTH_FILE,
@@ -388,6 +388,12 @@ def attack_run(
     directory: Annotated[
         Path, typer.Option("--dir", help="Attack corpus directory.")
     ] = DEFAULT_ATTACK_DIR,
+    sink_port: Annotated[
+        int,
+        typer.Option(
+            "--sink-port", help="Exfiltration sink port; 0 for ephemeral (not reproducible)."
+        ),
+    ] = DEFAULT_SINK_PORT,
 ) -> None:
     """Run attacks against the live index and report which landed.
 
@@ -403,7 +409,7 @@ def attack_run(
 
     # The sink is loopback-only and inert unless an exfiltration beacon fires at
     # it; it is held open for the whole batch so its port is stable across runs.
-    with ExfiltrationSink() as sink:
+    with ExfiltrationSink(port=sink_port) as sink:
         runner = factory.build_attack_runner(cfg, sink=sink)
         console.print(f"exfiltration sink listening on [dim]{sink.base_url}[/]")
 
