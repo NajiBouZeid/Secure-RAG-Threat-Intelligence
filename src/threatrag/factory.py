@@ -24,6 +24,7 @@ from threatrag.domain.ports import (
 from threatrag.index.embedders.mean_pooled import MeanPooledEncoderEmbedder
 from threatrag.index.embedders.sentence_transformer import SentenceTransformerEmbedder
 from threatrag.index.qdrant_store import QdrantVectorStore
+from threatrag.index.segregated_store import SegregatedStore
 from threatrag.ingest.chunking import build_chunker
 from threatrag.ingest.pipeline import IngestPipeline
 from threatrag.ingest.sources.attack_cti import AttackCtiSource
@@ -87,7 +88,18 @@ def build_store(config: Config) -> VectorStore:
     backend = config.vector_store.backend
     if backend != "qdrant":
         raise ValueError(f"Unsupported vector store backend {backend!r}")
-    return QdrantVectorStore(config.vector_store.url, config.vector_store.collection)
+    spec = config.vector_store
+    public = QdrantVectorStore(spec.url, spec.collection)
+    # D5 has no request-time hook -- it decides where a chunk is written, and by
+    # the time any hook runs that is already settled. It is toggled from the
+    # same defences list as the rest so a benchmark cell has one place to look.
+    if "corpus_segregation" not in config.defenses:
+        return public
+    return SegregatedStore(
+        public,
+        QdrantVectorStore(spec.url, spec.restricted_collection),
+        restrict_above=spec.restrict_above,
+    )
 
 
 def build_generator(config: Config) -> Generator:

@@ -39,6 +39,7 @@ def _install() -> None:
     place the canonical order is written down.
     """
     from threatrag.security.defenses import (
+        corpus_segregation,
         egress_filter,
         injection_screen,
         provenance_fence,
@@ -49,6 +50,7 @@ def _install() -> None:
     register("source_cap", source_cap.build)
     register("provenance_fence", provenance_fence.build)
     register("egress_filter", egress_filter.build)
+    register("corpus_segregation", corpus_segregation.build)
 
 
 def available() -> tuple[str, ...]:

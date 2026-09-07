@@ -76,6 +76,11 @@ class VectorStoreConfig(BaseModel):
     backend: str = "qdrant"
     url: str = "http://localhost:6333"
     collection: str = "threatrag"
+    # Used only when the corpus_segregation defence is enabled. Anything
+    # classified above restrict_above is written here instead, so the public
+    # collection an attacker steals holds no confidential vector at all.
+    restricted_collection: str = "threatrag_restricted"
+    restrict_above: TLP = TLP.GREEN
 
 
 class RetrievalConfig(BaseModel):
