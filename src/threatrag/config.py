@@ -138,6 +138,16 @@ class EgressFilterConfig(BaseModel):
     allowed_hosts: list[str] = Field(default_factory=list)
 
 
+class CorroborationConfig(BaseModel):
+    """D6: the trust tier at or below which a citation needs corroboration.
+
+    COMMUNITY means authoritative and vendor sources stand on their own, and
+    only community/untrusted material has to survive the check.
+    """
+
+    needs_support_at_or_below: TrustTier = TrustTier.COMMUNITY
+
+
 class DefenseSettings(BaseModel):
     """Per-defence parameters.
 
@@ -150,6 +160,7 @@ class DefenseSettings(BaseModel):
     source_cap: SourceCapConfig = Field(default_factory=SourceCapConfig)
     provenance_fence: ProvenanceFenceConfig = Field(default_factory=ProvenanceFenceConfig)
     egress_filter: EgressFilterConfig = Field(default_factory=EgressFilterConfig)
+    corroboration: CorroborationConfig = Field(default_factory=CorroborationConfig)
 
 
 class PrincipalConfig(BaseModel):

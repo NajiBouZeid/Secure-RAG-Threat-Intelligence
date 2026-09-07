@@ -1,7 +1,7 @@
 # Every request-time defence at once. corpus_segregation is deliberately
 # absent: it needs its own indexed topology, so it is a separate build
 # rather than a flag layered over this one.
-defenses: [injection_screen, source_cap, provenance_fence, egress_filter]
+defenses: [injection_screen, source_cap, provenance_fence, egress_filter, corroboration]
 retrieval:
   # A cap with no headroom only deletes; with headroom it promotes the next
   # document into the slot it freed.

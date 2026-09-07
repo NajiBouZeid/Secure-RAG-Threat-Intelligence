@@ -1,0 +1,9 @@
+# D6 with its threshold lowered to VENDOR, so it polices the 2759 vendor
+# chunks and the 30 vendor-tier internal notes instead of a tier this corpus
+# barely populates. This is the cost measurement: at the default threshold
+# the only content below it is 4 chunks and the transient attack corpus, so a
+# 0% refusal rate there says more about the corpus than about the rule.
+defenses: [corroboration]
+defense_settings:
+  corroboration:
+    needs_support_at_or_below: 1

@@ -40,6 +40,7 @@ def _install() -> None:
     """
     from threatrag.security.defenses import (
         corpus_segregation,
+        corroboration,
         egress_filter,
         injection_screen,
         provenance_fence,
@@ -50,6 +51,7 @@ def _install() -> None:
     register("source_cap", source_cap.build)
     register("provenance_fence", provenance_fence.build)
     register("egress_filter", egress_filter.build)
+    register("corroboration", corroboration.build)
     register("corpus_segregation", corpus_segregation.build)
 
 
