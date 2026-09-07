@@ -101,6 +101,11 @@ class GenerationConfig(BaseModel):
     # Character budget for retrieved passages. Ollama truncates an over-long
     # prompt silently, so this is bounded here where it can be recorded.
     max_context_chars: int = 12000
+    # Output token budget. The mirror of num_ctx: without it a model can
+    # generate until it fills the context window, which qwen2.5:1.5b does on at
+    # least one benchmark cell. 1024 tokens is roughly 4000 characters, well
+    # above any answer either model produces here.
+    num_predict: int = 1024
 
 
 class InjectionScreenConfig(BaseModel):

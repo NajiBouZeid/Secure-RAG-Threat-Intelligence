@@ -3,13 +3,20 @@
 Ollama runs on the host rather than in compose (see docker-compose.yml), so the
 only coupling is this HTTP client.
 
-Two settings are deliberate rather than defaults. ``temperature`` is 0 because
+Three settings are deliberate rather than defaults. ``temperature`` is 0 because
 the benchmark compares defence configurations, and a sampling temperature would
 put run-to-run variance on top of the effect being measured. ``num_ctx`` is
 pinned because Ollama silently truncates a prompt that exceeds the context
 window: retrieved chunks would vanish from the middle of the prompt with no
 error, and the answer would look like a retrieval failure instead of a
 configuration one.
+
+``num_predict`` bounds the *output*, which was missing and is the symmetric
+control. Without it a model can generate until it exhausts the context window.
+qwen2.5:1.5b does exactly that on one M7 cell -- poi-001's query under the full
+defence set -- running past ten minutes and defeating three 180s retries, which
+took down an otherwise complete sweep. That is not only a benchmark problem: an
+assistant with no output bound will hang a real request the same way.
 """
 
 from __future__ import annotations
@@ -32,6 +39,7 @@ class OllamaGenerator:
         *,
         temperature: float = 0.0,
         num_ctx: int = 8192,
+        num_predict: int = 1024,
         timeout: float = 180.0,
         client: httpx.Client | None = None,
     ) -> None:
@@ -39,6 +47,7 @@ class OllamaGenerator:
         self._url = url.rstrip("/")
         self._temperature = temperature
         self._num_ctx = num_ctx
+        self._num_predict = num_predict
         self._timeout = timeout
         self._client = client
 
@@ -74,7 +83,11 @@ class OllamaGenerator:
                 {"role": "user", "content": user},
             ],
             "stream": False,
-            "options": {"temperature": self._temperature, "num_ctx": self._num_ctx},
+            "options": {
+                "temperature": self._temperature,
+                "num_ctx": self._num_ctx,
+                "num_predict": self._num_predict,
+            },
         }
 
         try:

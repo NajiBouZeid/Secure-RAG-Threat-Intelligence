@@ -111,6 +111,7 @@ def build_generator(config: Config) -> Generator:
         url=config.generation.url,
         temperature=config.generation.temperature,
         num_ctx=config.generation.num_ctx,
+        num_predict=config.generation.num_predict,
     )
 
 
