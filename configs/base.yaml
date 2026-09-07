@@ -111,6 +111,7 @@ sources:
 #   source_cap          limit how many passages one document may contribute
 #   provenance_fence    frame low-trust passages as quoted data, not prose
 #   egress_filter       strip outbound URLs from the answer
+#   corroboration       refuse a low-trust claim that ignores better evidence
 #   corpus_segregation  write classified chunks to a separate collection
 defenses: []
 
@@ -127,3 +128,8 @@ defense_settings:
     allowed_hosts: []
   injection_screen:
     extra_patterns: []
+  corroboration:
+    # Tier at or below which a citation must be corroborated. 2 (COMMUNITY)
+    # refuses 0 of 6 legitimate vendor questions here; 1 (VENDOR) refuses 2
+    # of 6. One step on this dial is the whole cost of the defence.
+    needs_support_at_or_below: 2

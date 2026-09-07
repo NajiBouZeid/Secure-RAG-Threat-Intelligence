@@ -131,7 +131,7 @@ tests/
 - [x] **M3** — NVD CVE and vendor PDF sources, chunking-strategy comparison
 - [x] **M4** — Indirect injection, rendering exfiltration, retrieval poisoning
 - [x] **M5** — Embedding inversion (GTR via vec2text) and re-identification without a corrector
-- [x] **M6** — Five defences, independently toggleable
+- [x] **M6** — Six defences, independently toggleable (five planned, plus corroboration)
 - [ ] **M7** — Benchmark runner, two models, defence-vs-utility report
 
 ## Scope and ethics
