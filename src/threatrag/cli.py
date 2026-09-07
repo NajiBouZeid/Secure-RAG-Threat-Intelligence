@@ -8,7 +8,9 @@ benchmark runner would need to duplicate.
 from __future__ import annotations
 
 import json
+import random
 import sys
+import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Annotated
@@ -20,11 +22,24 @@ from rich.table import Table
 
 from threatrag import factory
 from threatrag.config import Config, load_config
-from threatrag.domain.models import TLP, Document, Principal, SourceType
+from threatrag.domain.models import TLP, Answer, Document, Principal, SourceType
 from threatrag.eval import goldset as goldset_module
+from threatrag.eval.benchmark import (
+    CellResult,
+    ResultWriter,
+    answer_gold_questions,
+    build_cells,
+    cell_config,
+    iter_cells,
+    run_attacks,
+    score_retrieval,
+    timed,
+)
 from threatrag.eval.metrics import aggregate, score_query
 from threatrag.ingest.pipeline import IngestStats
 from threatrag.ingest.sources.nvd_api import NVD_ATTRIBUTION
+from threatrag.rag.pipeline import NO_EVIDENCE, AnswerPipeline
+from threatrag.rag.retriever import Retriever
 from threatrag.security.attacks.loader import DEFAULT_ATTACK_DIR, load_attacks
 from threatrag.security.attacks.sink import DEFAULT_SINK_PORT, ExfiltrationSink
 from threatrag.security.inversion.backfill import backfill_vectors
@@ -721,6 +736,138 @@ def invert_reidentify(
             newline="\n",
         )
         console.print(f"wrote {len(report.rows)} rows to [bold]{dump}[/]")
+
+
+# The M7 sweep. Cells name a committed overlay rather than a defence list, so a
+# row here and a command-line run of that overlay are the same configuration.
+# corpus_segregation is absent on purpose: it decides where a chunk is written,
+# so it needs its own index rather than its own cell, and it is measured by
+# `benchmark segregation` against that index instead.
+EXPERIMENTS = Path("configs/experiments")
+SWEEP_SETS: tuple[tuple[str, Path | None], ...] = (
+    ("none", None),
+    ("provenance_fence", EXPERIMENTS / "defense_provenance_fence.yaml"),
+    ("source_cap", EXPERIMENTS / "defense_source_cap.yaml"),
+    ("egress_filter", EXPERIMENTS / "defense_egress_filter.yaml"),
+    ("injection_screen", EXPERIMENTS / "defense_injection_screen.yaml"),
+    ("corroboration", EXPERIMENTS / "defense_corroboration.yaml"),
+    ("all", EXPERIMENTS / "defense_all.yaml"),
+)
+SWEEP_OUT = Path("reports/data/m7_sweep.jsonl")
+
+
+@app.command()
+def benchmark(
+    config: ConfigOption = None,
+    models: Annotated[
+        str, typer.Option("--models", help="Comma-separated generator models to sweep.")
+    ] = "qwen2.5:7b,qwen2.5:1.5b",
+    questions: Annotated[
+        int, typer.Option("--questions", help="Gold questions per cell for answer utility.")
+    ] = 50,
+    seed: Annotated[int, typer.Option("--seed", help="Sampling seed; keep fixed.")] = 1337,
+    out: Annotated[Path, typer.Option("--out", help="JSONL results file.")] = SWEEP_OUT,
+    fresh: Annotated[
+        bool, typer.Option("--fresh", help="Ignore existing results and re-run every cell.")
+    ] = False,
+    sink_port: Annotated[
+        int,
+        typer.Option(
+            "--sink-port", help="Exfiltration sink port; 0 for ephemeral (not reproducible)."
+        ),
+    ] = DEFAULT_SINK_PORT,
+) -> None:
+    """Sweep defence sets x models over both attack corpora and the utility axes.
+
+    Long-running and resumable: each cell is written to ``--out`` as it
+    finishes, and a re-run skips what is already there unless ``--fresh``.
+    """
+    base = _config(config)
+    gold = goldset_module.GoldSet.load(base.paths.eval_dir / GOLDSET_FILENAME)
+    # A fixed seed and a fixed sample, so every cell answers the *same*
+    # questions. Re-sampling per cell would put sampling noise on the axis the
+    # whole report is read off.
+    sample = random.Random(seed).sample(list(gold.queries), min(questions, len(gold.queries)))
+
+    m4 = load_attacks(DEFAULT_ATTACK_DIR)
+    evasion_dir = Path(DEFAULT_ATTACK_DIR) / "evasion"
+    evasion = load_attacks(evasion_dir) if evasion_dir.exists() else []
+
+    if out.exists() and fresh:
+        out.unlink()
+    writer = ResultWriter(out)
+    cells = build_cells(list(SWEEP_SETS), [m.strip() for m in models.split(",") if m.strip()])
+    pending = list(iter_cells(cells, writer))
+    console.print(
+        f"{len(pending)} of {len(cells)} cells to run "
+        f"({len(m4)} + {len(evasion)} attacks, {len(sample)} questions each) -> {out}"
+    )
+
+    # Retrieval never touches the generator, so it is scored once per defence
+    # set. Scoring it per cell would double the cost and invent a difference
+    # between two identical numbers.
+    retrieval_cache: dict[str, dict[str, float | int]] = {}
+
+    for index, cell in enumerate(pending, start=1):
+        started = time.perf_counter()
+        cfg = cell_config(cell, config_path=config, load=load_config)
+        console.print(f"[bold]{index}/{len(pending)}[/] {cell.key}  defenses={cfg.defenses}")
+
+        if cell.label not in retrieval_cache:
+            retriever = factory.build_retriever(cfg)
+
+            # Closed over this cell's objects deliberately, and defined inside
+            # the loop rather than bound by default argument so the types stay
+            # inferable. A closure over the loop variable would be one refactor
+            # away from scoring every cell with the last cell's retriever.
+            def refs(question: str, k: int, r: Retriever = retriever) -> list[str]:
+                return [hit.chunk.source_ref for hit in r.retrieve(question, k=k)]
+
+            scores = score_retrieval(
+                refs,
+                gold.queries,
+                cfg.retrieval.top_k,
+            )
+            retrieval_cache[cell.label] = scores.as_row()
+
+        # Fixed port: the poison text embeds this URL, so an ephemeral one
+        # changes the document, its embedding and its rank between cells, and
+        # the sweep would attribute that to the defence being measured.
+        with ExfiltrationSink(port=sink_port) as sink:
+            runner = factory.build_attack_runner(cfg, sink=sink)
+            routes = [run_attacks(runner.run, m4, "m4")]
+            if evasion:
+                routes.append(run_attacks(runner.run, evasion, "evasion"))
+
+        pipeline = factory.build_answer_pipeline(cfg)
+
+        def ask(question: str, who: Principal | None, p: AnswerPipeline = pipeline) -> Answer:
+            return p.answer(question, principal=who)
+
+        answers = answer_gold_questions(
+            ask,
+            sample,
+            principal=None,
+            no_evidence=NO_EVIDENCE,
+        )
+
+        result = CellResult(
+            label=cell.label,
+            defenses=list(cfg.defenses),
+            model=cell.model,
+            routes=routes,
+            answers=answers.as_row(),
+            retrieval=retrieval_cache[cell.label],
+            seconds=timed(started),
+        )
+        writer.write(result)
+        landed = ", ".join(f"{r.corpus} {r.landed}/{r.total}" for r in result.routes)
+        console.print(
+            f"    {landed} | utility {answers.answer_utility:.3f} "
+            f"| refused {answers.refusal_rate:.3f} | {result.seconds / 60:.1f} min"
+        )
+
+    console.print(f"\n[green]OK[/] sweep complete -> {out}")
 
 
 if __name__ == "__main__":
