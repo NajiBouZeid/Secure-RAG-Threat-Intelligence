@@ -55,6 +55,12 @@ class VectorStore(Protocol):
     query, not by discarding results afterwards.
     """
 
+    @property
+    def collection(self) -> str:
+        """A human-readable name for what this store writes to, for messages
+        that have to tell one index from another."""
+        ...
+
     def ensure_collection(self, vectors: Mapping[str, int]) -> None:
         """Declare every named vector the collection will ever hold.
 
