@@ -9,11 +9,18 @@ what lets the Phase 3 benchmark sweep configurations instead of forking scripts.
 from __future__ import annotations
 
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import datetime
 
 from threatrag.config import Config
-from threatrag.domain.ports import Chunker, DocumentSource, Embedder, Generator, VectorStore
+from threatrag.domain.ports import (
+    Chunker,
+    Defense,
+    DocumentSource,
+    Embedder,
+    Generator,
+    VectorStore,
+)
 from threatrag.index.embedders.mean_pooled import MeanPooledEncoderEmbedder
 from threatrag.index.embedders.sentence_transformer import SentenceTransformerEmbedder
 from threatrag.index.qdrant_store import QdrantVectorStore
@@ -29,6 +36,7 @@ from threatrag.rag.pipeline import AnswerPipeline
 from threatrag.rag.retriever import Retriever
 from threatrag.security.attacks.runner import AttackRunner
 from threatrag.security.attacks.sink import ExfiltrationSink
+from threatrag.security.defenses import build_defenses
 
 
 def build_embedder(
@@ -184,14 +192,19 @@ def build_pipeline(config: Config, embedder_name: str | None = None) -> IngestPi
         embedder=build_embedder(config, embedder_name),
         store=build_store(config),
         vector_spec=vector_spec(config),
+        defenses=build_defenses(config),
     )
 
 
 def build_answer_pipeline(config: Config, embedder_name: str | None = None) -> AnswerPipeline:
+    # The same defence objects run at every hook they implement, so a defence
+    # that spans retrieval and the answer sees one consistent view of a request.
+    defenses = build_defenses(config)
     return AnswerPipeline(
-        retriever=build_retriever(config, embedder_name),
+        retriever=build_retriever(config, embedder_name, defenses=defenses),
         generator=build_generator(config),
         max_context_chars=config.generation.max_context_chars,
+        defenses=defenses,
     )
 
 
@@ -212,10 +225,16 @@ def build_attack_runner(
     )
 
 
-def build_retriever(config: Config, embedder_name: str | None = None) -> Retriever:
+def build_retriever(
+    config: Config,
+    embedder_name: str | None = None,
+    *,
+    defenses: Sequence[Defense] | None = None,
+) -> Retriever:
     return Retriever(
         embedder=build_embedder(config, embedder_name),
         store=build_store(config),
         top_k=config.retrieval.top_k,
         score_threshold=config.retrieval.score_threshold,
+        defenses=build_defenses(config) if defenses is None else defenses,
     )
