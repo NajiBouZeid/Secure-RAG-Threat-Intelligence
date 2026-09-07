@@ -22,6 +22,10 @@ venv/
 .coverage
 htmlcov/
 
+# HuggingFace Trainer's default output_dir; vec2text constructs one to reach
+# the corrector and leaves it behind in the working directory.
+tmp_trainer/
+
 # Local infra state
 qdrant_storage/
 .env
