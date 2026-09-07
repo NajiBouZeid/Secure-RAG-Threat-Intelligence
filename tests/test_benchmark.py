@@ -22,10 +22,10 @@ from threatrag.eval.benchmark import (
     summarise_route,
 )
 
-DEFENCE_SETS = [
-    ("none", ()),
-    ("injection_screen", ("injection_screen",)),
-    ("all", ("injection_screen", "corroboration")),
+DEFENCE_SETS: list[tuple[str, Path | None]] = [
+    ("none", None),
+    ("injection_screen", Path("configs/experiments/defense_injection_screen.yaml")),
+    ("all", Path("configs/experiments/defense_all.yaml")),
 ]
 MODELS = ["qwen2.5:7b", "qwen2.5:1.5b"]
 
@@ -69,17 +69,35 @@ def test_the_defence_set_varies_slowest() -> None:
     assert len(cells) == 6
 
 
-def test_a_cell_config_does_not_mutate_the_base() -> None:
-    """Otherwise one cell's defences leak into every later cell and the sweep
-    silently measures the wrong thing."""
-    base = _base_config()
+def test_a_cell_loads_its_own_overlay_rather_than_sharing_an_object() -> None:
+    """Nothing a previous cell set may survive into this one, and the config
+    must be exactly what running that overlay from the command line produces."""
+    seen: list[Path | None] = []
 
-    built = cell_config(base, Cell("all", ("injection_screen", "corroboration"), "qwen2.5:1.5b"))
+    def load(config_path: Path | None, overlay: Path | None) -> Config:
+        seen.append(overlay)
+        built = _base_config()
+        built.defenses = ["injection_screen", "corroboration"]
+        return built
 
+    cell = Cell("all", Path("configs/experiments/defense_all.yaml"), "qwen2.5:1.5b")
+    built = cell_config(cell, config_path=None, load=load)
+
+    assert seen == [Path("configs/experiments/defense_all.yaml")]
     assert built.defenses == ["injection_screen", "corroboration"]
     assert built.generation.model == "qwen2.5:1.5b"
-    assert base.defenses == ["provenance_fence"]
-    assert base.generation.model == "qwen2.5:7b"
+
+
+def test_the_source_cap_overlay_carries_its_overfetch() -> None:
+    """The reason cells name an overlay instead of a defence list. Without the
+    headroom the cap can only delete, and the cell would measure a different
+    mitigation than the one M6 published under that name."""
+    from threatrag.config import load_config
+
+    cfg = load_config(overlay="configs/experiments/defense_source_cap.yaml")
+
+    assert cfg.defenses == ["source_cap"]
+    assert cfg.retrieval.overfetch == 3
 
 
 def test_results_are_readable_after_every_cell(tmp_path: Path) -> None:

@@ -33,13 +33,23 @@ from threatrag.eval.metrics import AggregateScores, aggregate, score_query
 from threatrag.security.attacks.runner import AttackResult
 from threatrag.security.attacks.schema import Attack
 
+#: ``load_config``, injected so the harness can be tested without YAML on disk.
+ConfigLoader = Callable[["Path | None", "Path | None"], Config]
+
 
 @dataclass(frozen=True)
 class Cell:
-    """One benchmark configuration: a defence set under one generator."""
+    """One benchmark configuration: a committed overlay under one generator.
+
+    A cell names an *overlay file*, not a list of defence names. The overlays in
+    ``configs/experiments/`` are what M6 measured, and some carry more than a
+    defence list -- ``defense_source_cap.yaml`` also raises ``retrieval.overfetch``,
+    without which the cap can only delete and the cell would silently measure a
+    different mitigation than the one M6 published under that name.
+    """
 
     label: str
-    defenses: tuple[str, ...]
+    overlay: Path | None
     model: str
 
     @property
@@ -155,7 +165,7 @@ class ResultWriter:
 
 
 def build_cells(
-    defence_sets: Sequence[tuple[str, tuple[str, ...]]], models: Sequence[str]
+    defence_sets: Sequence[tuple[str, Path | None]], models: Sequence[str]
 ) -> list[Cell]:
     """Every defence set under every model, defence set varying slowest.
 
@@ -164,21 +174,20 @@ def build_cells(
     that can still be read as a result.
     """
     return [
-        Cell(label=label, defenses=names, model=model)
-        for label, names in defence_sets
+        Cell(label=label, overlay=overlay, model=model)
+        for label, overlay in defence_sets
         for model in models
     ]
 
 
-def cell_config(base: Config, cell: Cell) -> Config:
-    """Base config with this cell's defences and generator applied.
+def cell_config(cell: Cell, *, config_path: Path | None, load: ConfigLoader) -> Config:
+    """Load this cell's overlay and point it at this cell's generator.
 
-    A deep copy: the defence list and the model are the only things a cell is
-    allowed to vary, and mutating the shared base would leak one cell's settings
-    into the next.
+    Loaded fresh per cell rather than copied from a shared object, so nothing a
+    previous cell set can survive into this one -- and so the config is exactly
+    what running that overlay from the command line would produce.
     """
-    config = base.model_copy(deep=True)
-    config.defenses = list(cell.defenses)
+    config = load(config_path, cell.overlay)
     config.generation.model = cell.model
     return config
 
