@@ -16,7 +16,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field
 
-from threatrag.domain.models import TLP
+from threatrag.domain.models import TLP, TrustTier
 
 DEFAULT_CONFIG = Path("configs/base.yaml")
 DEFAULT_ENV_FILE = Path(".env")
@@ -111,6 +111,17 @@ class SourceCapConfig(BaseModel):
     max_per_document: int = 2
 
 
+class ProvenanceFenceConfig(BaseModel):
+    """D1: the least-trusted tier that is still presented unframed.
+
+    Defaults to VENDOR rather than UNTRUSTED on purpose. Fencing only the tier
+    the attack corpus occupies would make the defence free by construction; the
+    2729 vendor chunks are where its utility cost becomes visible.
+    """
+
+    min_tier: TrustTier = TrustTier.VENDOR
+
+
 class DefenseSettings(BaseModel):
     """Per-defence parameters.
 
@@ -121,6 +132,7 @@ class DefenseSettings(BaseModel):
 
     injection_screen: InjectionScreenConfig = Field(default_factory=InjectionScreenConfig)
     source_cap: SourceCapConfig = Field(default_factory=SourceCapConfig)
+    provenance_fence: ProvenanceFenceConfig = Field(default_factory=ProvenanceFenceConfig)
 
 
 class PrincipalConfig(BaseModel):
