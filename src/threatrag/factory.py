@@ -236,5 +236,6 @@ def build_retriever(
         store=build_store(config),
         top_k=config.retrieval.top_k,
         score_threshold=config.retrieval.score_threshold,
+        overfetch=config.retrieval.overfetch,
         defenses=build_defenses(config) if defenses is None else defenses,
     )

@@ -25,12 +25,14 @@ class Retriever:
         *,
         top_k: int = 5,
         score_threshold: float | None = None,
+        overfetch: int = 1,
         defenses: Sequence[Defense] = (),
     ) -> None:
         self._embedder = embedder
         self._store = store
         self._top_k = top_k
         self._score_threshold = score_threshold
+        self._overfetch = max(1, overfetch)
         self._defenses = list(defenses)
 
     @property
@@ -44,9 +46,14 @@ class Retriever:
         k: int | None = None,
         principal: Principal | None = None,
     ) -> list[RetrievedChunk]:
+        wanted = k or self._top_k
+        # A defence at this hook can only drop or reorder what it is handed, so
+        # with no headroom a diversity rule is purely destructive: refusing a
+        # duplicate leaves a hole rather than promoting the next document. The
+        # default of 1 fetches exactly as before, so every pre-M6 number stands.
         query_vector = self._embedder.embed_query(question)
         results = self._store.search(
-            self._embedder.name, query_vector, k or self._top_k, principal=principal
+            self._embedder.name, query_vector, wanted * self._overfetch, principal=principal
         )
 
         if self._score_threshold is not None:
@@ -59,4 +66,7 @@ class Retriever:
 
         for defense in self._defenses:
             results = defense.on_retrieve(results)
-        return results
+        # Truncated after the defences, never before: the over-fetched tail is
+        # the material a diversity rule promotes from, and the caller must still
+        # receive the k passages it asked for.
+        return results[:wanted]

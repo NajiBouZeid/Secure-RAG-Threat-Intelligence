@@ -81,6 +81,10 @@ class VectorStoreConfig(BaseModel):
 class RetrievalConfig(BaseModel):
     top_k: int = 5
     score_threshold: float | None = None
+    # Search depth multiplier. Retrieval fetches top_k * overfetch, defences run
+    # over that, and the result is cut to top_k. 1 reproduces every pre-M6
+    # number exactly; a retrieval-hook defence needs headroom to promote from.
+    overfetch: int = 1
 
 
 class GenerationConfig(BaseModel):
@@ -101,6 +105,12 @@ class InjectionScreenConfig(BaseModel):
     extra_patterns: list[str] = Field(default_factory=list)
 
 
+class SourceCapConfig(BaseModel):
+    """D2: how many passages one document may contribute to a top-k."""
+
+    max_per_document: int = 2
+
+
 class DefenseSettings(BaseModel):
     """Per-defence parameters.
 
@@ -110,6 +120,7 @@ class DefenseSettings(BaseModel):
     """
 
     injection_screen: InjectionScreenConfig = Field(default_factory=InjectionScreenConfig)
+    source_cap: SourceCapConfig = Field(default_factory=SourceCapConfig)
 
 
 class PrincipalConfig(BaseModel):
