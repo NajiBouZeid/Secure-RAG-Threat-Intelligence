@@ -7,10 +7,11 @@ Most RAG projects stop at "it answers questions." The interesting part is that a
 system in a security context introduces an attack surface *at the retrieval layer* that
 input-layer defences never see: the attacker's payload does not arrive through the user's
 prompt, it arrives through a document the system chose to retrieve. This project builds a
-useful system, breaks it four ways, defends it five ways, and measures the trade-off.
+useful system, breaks it four ways, defends it six ways, and measures the trade-off.
 
-> **Status:** M1 in progress — ingestion, indexing, retrieval and retrieval evaluation.
-> See [Roadmap](#roadmap).
+> **Status:** M1–M7 complete — the full path runs, four attack classes land against it,
+> six defences are measured against both attack routes, and the benchmark reports what
+> the defences cost. See [Roadmap](#roadmap) and [reports/](reports/).
 
 ---
 
