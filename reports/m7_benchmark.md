@@ -1,8 +1,19 @@
 # M7: the defence-versus-utility benchmark
 
-Run 2026-09-09 against the same 40815-chunk index M4 attacked, M5 stole and M6
-defended. Two generators — `qwen2.5:7b` and `qwen2.5:1.5b`, both at temperature
-0 — across seven defence sets, three repeats each: 42 cells.
+Run 2026-09-09, covering **both** routes into this system.
+
+The **prompt route** — an attacker who poisons a document the pipeline retrieves
+— is measured against the same 40815-chunk index M4 attacked and M6 defended:
+two generators, `qwen2.5:7b` and `qwen2.5:1.5b`, both at temperature 0, across
+seven defence sets with three repeats each, so 42 cells.
+
+The **index route** — an attacker who steals the vector index outright, which is
+M5's attack — is measured separately, against a purpose-built segregated index,
+because the only defence that touches it decides where a chunk is written rather
+than what happens to a request. That axis begins at "The index route" below.
+
+Neither route is summed into the other, and no single "security score" is
+offered: they are counted in different units and no defence spans both.
 
 ## What a cell is, and why it is defined that way
 
@@ -152,12 +163,32 @@ fence's entire apparent gain. The three-repeat agreement inside a cell was
 measuring something narrower than run-to-run variation, so it read as precision
 it did not have.
 
-The honest statement is therefore a negative one: **across seven defence sets,
-no difference in answer utility exceeds the undefended model's own spread.** On
-this corpus, at 50 questions, the request-time defences are free in utility
-terms — and the correct conclusion is that the instrument cannot resolve the
-differences, not that the differences are zero. Separating them needs more
-questions, or more repeats of the *baseline*, which is the cell that moves.
+On 7b that settles it: the undefended range 0.14-0.18 covers **every** defence
+set, including the fence and the egress filter that looked like improvements.
+Nothing on that model is resolvable at 50 questions, and the correct conclusion
+is that the instrument cannot separate the sets, not that the costs are zero.
+
+**1.5b is the exception, and it is the one utility effect this sweep does
+resolve.** Its undefended cells score 0.28, 0.30, 0.30, and an independent
+fourth measurement also scored 0.30, so the baseline sits in 0.28-0.30. Against
+that:
+
+| set | 1.5b repeats | versus baseline |
+|---|---|---|
+| `source_cap` | 0.24, 0.24, 0.28 | below the baseline minimum in two of three |
+| all five | 0.24, 0.24, 0.28 | identical, and it contains the cap |
+
+Every other 1.5b set stays inside 0.28-0.30. So the cap — the defence that
+*improves* retrieval — is the one that costs answer utility, and only on the
+weaker model: roughly 2 to 3 questions in 50. The full set tracks it exactly,
+which is what you would expect if the cap is the cause.
+
+This is offered as suggestive, not established, for a specific reason: 7b's
+baseline range widened from 0.14-0.16 to 0.14-0.18 the moment a fourth
+measurement was taken, and 1.5b's baseline has also only been measured four
+times. A fifth could widen it the same way and swallow this effect too. The way
+to settle it is more repeats of the *baseline*, which is the cell that moves —
+not more defended cells.
 
 ### Is 1.5b better, or just longer? Neither, it turns out
 
@@ -231,8 +262,10 @@ rate are still up.
 
 The methodological point outlives the discrepancy: **an index is a measuring
 device, and a retrieval number is only reproducible against a stated index
-state.** Every retrieval figure in this report was measured against 40815 points
-with no adversarial chunks resident.
+state.** So, stated: every figure in this section was measured against the
+undefended `threatrag` collection at 40815 points with no adversarial chunks
+resident. The index-route section below measures a different topology — two
+collections that sum to the same 40815 — and says so where its numbers appear.
 
 ## The index route
 
@@ -323,8 +356,13 @@ Evidence: `reports/data/m7_reidentify_public.json`,
 
 * **`exf-002` on 1.5b is still not reproducible**, and three repeats expose it
   without explaining it.
-* **The utility axis is under-powered.** 50 questions cannot separate seven
-  defence sets whose baseline alone spans 0.14-0.18.
+* **The utility axis is under-powered on 7b**, whose baseline alone spans
+  0.14-0.18 and covers every defence set at 50 questions.
+* **Whether `source_cap` really costs 1.5b utility is unresolved.** It is the
+  only effect that sits outside a baseline range here (0.24-0.28 against
+  0.28-0.30), but 7b's baseline widened by 0.02 as soon as a fourth measurement
+  was taken, and 1.5b's has only four. More baseline repeats would settle it;
+  more defended cells would not.
 * **Why 1.5b out-scores 7b is now an open question** rather than a suspected
   artefact — verbosity was the hypothesis, and it was tested and rejected.
 * **The M6 cap discrepancy has a plausible cause and no proof.**
