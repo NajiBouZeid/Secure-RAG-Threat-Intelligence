@@ -1,0 +1,606 @@
+{
+  "qwen2.5:7b": [
+    {
+      "q": "Which execution techniques does ToddyCat use?",
+      "chars": 501,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which reconnaissance techniques does LAPSUS$ use?",
+      "chars": 341,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which privilege escalation techniques does UNC3886 use?",
+      "chars": 300,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which initial access techniques does Wizard Spider use?",
+      "chars": 181,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which command and control techniques does Scattered Spider use?",
+      "chars": 944,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which impact techniques does Scattered Spider use?",
+      "chars": 117,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does MirrorFace use?",
+      "chars": 306,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which persistence techniques does Gamaredon Group use?",
+      "chars": 188,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which discovery techniques does GALLIUM use?",
+      "chars": 309,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which stealth techniques does Whitefly use?",
+      "chars": 409,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does INC Ransom use?",
+      "chars": 124,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which credential access techniques does Wizard Spider use?",
+      "chars": 213,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does FIN4 use?",
+      "chars": 171,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does Windshift use?",
+      "chars": 126,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which privilege escalation techniques does Velvet Ant use?",
+      "chars": 81,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does BRONZE BUTLER use?",
+      "chars": 122,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does TA577 use?",
+      "chars": 172,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which stealth techniques does TeamPCP use?",
+      "chars": 509,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which credential access techniques does Stealth Falcon use?",
+      "chars": 232,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which persistence techniques does Fox Kitten use?",
+      "chars": 65,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which stealth techniques does MirrorFace use?",
+      "chars": 799,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which command and control techniques does Chimera use?",
+      "chars": 180,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does Threat Group-3390 use?",
+      "chars": 70,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does Ember Bear use?",
+      "chars": 131,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which resource development techniques does Sea Turtle use?",
+      "chars": 134,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which discovery techniques does Inception use?",
+      "chars": 235,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which lateral movement techniques does Chimera use?",
+      "chars": 58,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does BlackByte use?",
+      "chars": 98,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which initial access techniques does FIN4 use?",
+      "chars": 563,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does RedCurl use?",
+      "chars": 53,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does Turla use?",
+      "chars": 315,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does Inception use?",
+      "chars": 124,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which credential access techniques does Volt Typhoon use?",
+      "chars": 138,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which command and control techniques does menuPass use?",
+      "chars": 190,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which exfiltration techniques does Mustang Panda use?",
+      "chars": 58,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which discovery techniques does APT37 use?",
+      "chars": 169,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which command and control techniques does OilRig use?",
+      "chars": 397,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which credential access techniques does APT39 use?",
+      "chars": 224,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does TA2541 use?",
+      "chars": 89,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does Winter Vivern use?",
+      "chars": 161,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which command and control techniques does INC Ransom use?",
+      "chars": 371,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which stealth techniques does Dark Caracal use?",
+      "chars": 350,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which defense impairment techniques does Magic Hound use?",
+      "chars": 149,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which reconnaissance techniques does EXOTIC LILY use?",
+      "chars": 78,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which persistence techniques does Threat Group-3390 use?",
+      "chars": 162,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does LAPSUS$ use?",
+      "chars": 140,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which defense impairment techniques does Scattered Spider use?",
+      "chars": 353,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does APT3 use?",
+      "chars": 195,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which privilege escalation techniques does Threat Group-3390 use?",
+      "chars": 267,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which persistence techniques does Chimera use?",
+      "chars": 216,
+      "hit": false,
+      "refused": false
+    }
+  ],
+  "qwen2.5:1.5b": [
+    {
+      "q": "Which execution techniques does ToddyCat use?",
+      "chars": 730,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which reconnaissance techniques does LAPSUS$ use?",
+      "chars": 214,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which privilege escalation techniques does UNC3886 use?",
+      "chars": 745,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which initial access techniques does Wizard Spider use?",
+      "chars": 237,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which command and control techniques does Scattered Spider use?",
+      "chars": 385,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which impact techniques does Scattered Spider use?",
+      "chars": 165,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does MirrorFace use?",
+      "chars": 499,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which persistence techniques does Gamaredon Group use?",
+      "chars": 647,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which discovery techniques does GALLIUM use?",
+      "chars": 319,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which stealth techniques does Whitefly use?",
+      "chars": 148,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does INC Ransom use?",
+      "chars": 826,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which credential access techniques does Wizard Spider use?",
+      "chars": 804,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does FIN4 use?",
+      "chars": 241,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does Windshift use?",
+      "chars": 483,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which privilege escalation techniques does Velvet Ant use?",
+      "chars": 705,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does BRONZE BUTLER use?",
+      "chars": 124,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does TA577 use?",
+      "chars": 425,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which stealth techniques does TeamPCP use?",
+      "chars": 1096,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which credential access techniques does Stealth Falcon use?",
+      "chars": 209,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which persistence techniques does Fox Kitten use?",
+      "chars": 316,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which stealth techniques does MirrorFace use?",
+      "chars": 810,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which command and control techniques does Chimera use?",
+      "chars": 3406,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does Threat Group-3390 use?",
+      "chars": 48,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does Ember Bear use?",
+      "chars": 142,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which resource development techniques does Sea Turtle use?",
+      "chars": 152,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which discovery techniques does Inception use?",
+      "chars": 121,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which lateral movement techniques does Chimera use?",
+      "chars": 56,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does BlackByte use?",
+      "chars": 187,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which initial access techniques does FIN4 use?",
+      "chars": 100,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does RedCurl use?",
+      "chars": 102,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does Turla use?",
+      "chars": 1252,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does Inception use?",
+      "chars": 211,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which credential access techniques does Volt Typhoon use?",
+      "chars": 776,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which command and control techniques does menuPass use?",
+      "chars": 636,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which exfiltration techniques does Mustang Panda use?",
+      "chars": 127,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which discovery techniques does APT37 use?",
+      "chars": 161,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which command and control techniques does OilRig use?",
+      "chars": 479,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which credential access techniques does APT39 use?",
+      "chars": 232,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does TA2541 use?",
+      "chars": 215,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which execution techniques does Winter Vivern use?",
+      "chars": 256,
+      "hit": true,
+      "refused": false
+    },
+    {
+      "q": "Which command and control techniques does INC Ransom use?",
+      "chars": 489,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which stealth techniques does Dark Caracal use?",
+      "chars": 905,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which defense impairment techniques does Magic Hound use?",
+      "chars": 727,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which reconnaissance techniques does EXOTIC LILY use?",
+      "chars": 266,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which persistence techniques does Threat Group-3390 use?",
+      "chars": 401,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does LAPSUS$ use?",
+      "chars": 100,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which defense impairment techniques does Scattered Spider use?",
+      "chars": 913,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which collection techniques does APT3 use?",
+      "chars": 445,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which privilege escalation techniques does Threat Group-3390 use?",
+      "chars": 272,
+      "hit": false,
+      "refused": false
+    },
+    {
+      "q": "Which persistence techniques does Chimera use?",
+      "chars": 317,
+      "hit": true,
+      "refused": false
+    }
+  ]
+}
