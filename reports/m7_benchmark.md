@@ -234,13 +234,90 @@ device, and a retrieval number is only reproducible against a stated index
 state.** Every retrieval figure in this report was measured against 40815 points
 with no adversarial chunks resident.
 
-## Not yet measured: the index route
+## The index route
 
 `corpus_segregation` is absent from all 42 cells by construction — it decides
 where a chunk is *written*, so it needs its own indexed topology rather than a
-flag layered over this one. The index-route axis — a segregated build, its
-retrieval re-scored, and the M5 re-identification re-run against the public
-collection — is outstanding and is the last thing M7 owes.
+flag layered over this one. Built fresh for this axis:
+`threatrag_public` **40787** points and `threatrag_restricted` **28**, summing to
+exactly the 40815 of the undefended collection.
+
+### The attacker's view is not the defender's, and using the wrong one rigs the result
+
+The segregation overlay builds a store over *both* collections and merges by
+score — that is the **defender's** view. An attacker who exfiltrates the public
+collection does not thereby hold the restricted one, so measuring the theft
+against the merged store would price a breach that never happened and report D5
+as worthless by construction. The measurement therefore runs under a separate
+committed overlay, `configs/experiments/attacker_public_view.yaml`: a plain
+store over the public collection alone, no defences, read exactly as its thief
+would read it.
+
+### Result
+
+Both arms were run **in this session**, same seed (20260906), same sample size,
+same 6927-document attacker reference corpus. M5's published numbers were not
+used as the baseline: they were measured on 2026-09-06, and the `source_cap`
+discrepancy above is what happens when a number from another index state is
+treated as a fixed reference. The undefended arm reproduced M5 exactly, which is
+what makes the comparison usable.
+
+| | undefended | stolen public collection |
+|---|---|---|
+| public chunks recognised (top-1) | 107 / 280 = **0.382** | 107 / 280 = **0.382** |
+| internal-note chunks present to steal | **34** | **6** |
+| internal-note subjects leaked | **12** | **2** |
+| vendor-report chunks present | 20 | 20 |
+| vendor-report subjects leaked | **10** | **10** |
+| identifier quoted outright | 0 | 0 |
+
+**D5 removes 28 of 34 confidential note chunks from the stolen artefact and
+takes note-subject disclosure from 12 to 2**, while public-chunk recognition is
+bit-identical — the defence costs the attacker nothing they were entitled to and
+costs the defender nothing measurable.
+
+The two residual leaks are **by design, not failure**: `restrict_above: green`
+keeps TLP:GREEN notes public, six chunks qualify, and two of those six still
+disclose their subject to a nearest-neighbour match. Classification decides
+exposure; the mechanism then enforces it exactly.
+
+### Retrieval cost of segregation: the set is unchanged, the ordering is not
+
+Scored on the segregated store (the defender's view) over the same 200-question
+gold set:
+
+| metric | undefended | segregated |
+|---|---|---|
+| recall@5 | 0.1631 | **0.1631** |
+| precision@5 | 0.1764 | **0.1764** |
+| hit rate | 0.490 | **0.490** |
+| MRR | 0.3128 | 0.3137 |
+| nDCG@5 | 0.1823 | 0.1826 |
+
+M6 called this "provably unchanged". Precisely: the *set* of chunks retrieved at
+k=5 is unchanged — recall, precision and hit rate reproduce to four decimals —
+while MRR and nDCG move in the fourth decimal, so the *order* differs for a few
+queries. Two collections searched and merged by score is score-equivalent to one
+collection, but not tie-for-tie identical to it. The claim that survives is that
+segregation has no measurable retrieval cost, not that it is bit-identical.
+
+### The gap this axis found: vendor reports are unprotected and leak at 50%
+
+**20 vendor-report chunks sit in the hidden population and 10 disclose their
+subject — identical in both arms.** Vendor reports are not part of the corpus an
+attacker rebuilds from public sources, so under this attack they behave exactly
+like confidential material; but `restrict_above: green` leaves everything at
+VENDOR tier in the public collection, so segregation does nothing for them.
+
+M5 never surfaced this because its reporting centred on the internal notes.
+Half of the sampled vendor chunks leak their subject to a stolen-vector attack,
+and no defence in this project currently addresses it. Raising the threshold
+would move 2729 chunks into the restricted collection and is a classification
+decision with a real retrieval-topology cost, not a config tweak — so it is
+recorded here rather than made silently.
+
+Evidence: `reports/data/m7_reidentify_public.json`,
+`reports/data/m7_reidentify_undefended.json`.
 
 ## What M7 does not settle
 
@@ -251,6 +328,12 @@ collection — is outstanding and is the last thing M7 owes.
 * **Why 1.5b out-scores 7b is now an open question** rather than a suspected
   artefact — verbosity was the hypothesis, and it was tested and rejected.
 * **The M6 cap discrepancy has a plausible cause and no proof.**
+* **Vendor reports leak their subject at 50% under the stolen-index attack and
+  nothing defends them.** Found by this milestone, not fixed by it.
+* **The two routes are still not comparable on one scale.** The prompt route is
+  counted in attacks landed out of 7, the index route in chunks whose subject
+  leaked. Both are reported; neither converts into the other, and no single
+  "security score" is offered.
 * **BM25 stays out**, as M6 decided: it is a retriever change, and `poi-001` is
   a keyword-stuffing attack that a keyword retriever may well strengthen.
 
