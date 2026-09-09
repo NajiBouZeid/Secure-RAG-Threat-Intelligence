@@ -199,6 +199,17 @@ D2 is a defence with a *negative* utility cost — a point above the baseline on
 M7's plot — which also means it has to be judged on the retrieval improvement,
 because it stops no attack in this corpus.
 
+> **Correction (2026-09-09, from M7).** The `source_cap` row above does not
+> reproduce. Re-measured with the same committed overlay against a clean index,
+> it is **0.1665 / 0.1764 / 0.3172 / 0.1850 / 0.505**, stable across re-runs.
+> The baseline row reproduces exactly, `configs/` and the retrieval code have no
+> diff since this report, and Qdrant's approximate search was verified identical
+> to exact search, so the difference is most likely the index state these numbers
+> were taken on — which this report failed to record. The conclusion survives:
+> the cap still improves recall, MRR, nDCG and hit rate. The claim that it
+> improves *every* metric does not — precision now equals the baseline exactly.
+> See `reports/m7_benchmark.md`.
+
 ### D4 costs one CVE
 
 The screen was tuned against the live corpus rather than by argument. Two
