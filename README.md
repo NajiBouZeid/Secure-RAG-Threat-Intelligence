@@ -132,7 +132,7 @@ tests/
 - [x] **M4** — Indirect injection, rendering exfiltration, retrieval poisoning
 - [x] **M5** — Embedding inversion (GTR via vec2text) and re-identification without a corrector
 - [x] **M6** — Six defences, independently toggleable (five planned, plus corroboration)
-- [ ] **M7** — Benchmark runner, two models, defence-vs-utility report
+- [x] **M7** — Benchmark runner, two models, defence-vs-utility report, both attack routes
 
 ## Scope and ethics
 
