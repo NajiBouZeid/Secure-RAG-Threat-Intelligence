@@ -63,6 +63,12 @@ def summarise(model: str, records: list[dict[str, Any]]) -> None:
 
     ranked = sorted(records, key=lambda r: int(r["chars"]))
     third = len(ranked) // 3
+    if third == 0:
+        # Fewer than three answers leaves an empty tercile. Only reachable by
+        # lowering QUESTIONS, but a crash while summarising is a poor way to
+        # find that out after the generation has already been paid for.
+        print("  too few answers to split into terciles")
+        return
     for label, part in (
         ("short", ranked[:third]),
         ("mid", ranked[third : 2 * third]),
