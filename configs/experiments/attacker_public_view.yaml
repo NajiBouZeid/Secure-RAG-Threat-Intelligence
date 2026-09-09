@@ -1,0 +1,15 @@
+# What an attacker actually steals once D5 is deployed.
+#
+# Deliberately NOT the segregation overlay. That one builds a SegregatedStore
+# over both collections, which is the *defender's* view: it searches public and
+# restricted together and merges by score. An attacker who exfiltrates the
+# public collection does not thereby hold the restricted one, so measuring the
+# theft against both would price a breach that did not happen -- and would
+# report D5 as worthless by construction.
+#
+# So this is a plain store over the collection that crosses the trust boundary,
+# with no defences enabled: the stolen artefact, read exactly as its thief
+# would read it. Used by `threatrag invert reidentify` for the M7 index-route
+# axis, against the index built by defense_corpus_segregation.yaml.
+vector_store:
+  collection: threatrag_public
