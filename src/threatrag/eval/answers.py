@@ -26,26 +26,88 @@ What that buys and what it does not:
 ``refusal_rate`` and ``unsupported_citation_rate`` are reported alongside because
 a defence can buy its attack numbers by refusing everything, and that has to be
 visible in the same table rather than inferred from a drop in utility.
+
+M7's binary score turned out to be under-powered: at 50 questions the
+undefended baseline's own spread covered every defence set. Two additions carry
+more signal per question without introducing a judge. ``answer_recall`` is the
+fraction of a question's relevant techniques the answer names, so an answer that
+names three of six is no longer indistinguishable from one that names one.
+``ungrounded_id_rate`` counts technique ids the answer names that appear in no
+passage it was given. It is scored against the retrieved evidence rather than
+the gold set on purpose: MITRE's ``uses`` edges are incomplete, so an id absent
+from the gold set is not thereby wrong, but an id absent from every passage came
+from the model and not from the index. Every question's record is kept, so a
+later metric can be scored from the same answers instead of from a new run.
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from threatrag.domain.models import Answer
 from threatrag.eval.goldset import GoldQuery
 
+_TECHNIQUE_ID = re.compile(r"\bT\d{4}(?:\.\d{3})?\b")
 
-def names_a_relevant_technique(answer: Answer, relevant: Sequence[str]) -> bool:
-    """Whether the answer text mentions any identifier the gold set marks relevant.
+
+def technique_ids(text: str) -> list[str]:
+    """ATT&CK technique ids in ``text``, first occurrence order, without repeats."""
+    return list(dict.fromkeys(_TECHNIQUE_ID.findall(text)))
+
+
+def named_relevant(answer: Answer, relevant: Sequence[str]) -> list[str]:
+    """The gold identifiers the answer text mentions.
 
     Plain substring matching on the full identifier. Gold ids carry their
     sub-technique suffix (``T1071.001``), so searching for the whole string
     cannot be satisfied by the parent id alone -- which is the direction that
     would inflate the score.
     """
-    return any(ref in answer.text for ref in relevant)
+    return [ref for ref in relevant if ref in answer.text]
+
+
+def names_a_relevant_technique(answer: Answer, relevant: Sequence[str]) -> bool:
+    """Whether the answer text mentions any identifier the gold set marks relevant."""
+    return bool(named_relevant(answer, relevant))
+
+
+def ungrounded_ids(answer: Answer) -> list[str]:
+    """Technique ids the answer names that no retrieved passage carries.
+
+    A parent id counts as grounded when a passage carries one of its
+    sub-techniques: naming T1071 from a passage about T1071.001 is a
+    generalisation of the evidence, not an invention.
+    """
+    evidence: set[str] = set()
+    for hit in answer.retrieved:
+        chunk = hit.chunk
+        evidence.add(chunk.source_ref)
+        evidence.update(technique_ids(chunk.title))
+        evidence.update(technique_ids(chunk.text))
+    return [
+        ref
+        for ref in technique_ids(answer.text)
+        if ref not in evidence and not any(held.startswith(f"{ref}.") for held in evidence)
+    ]
+
+
+@dataclass(frozen=True)
+class QuestionRecord:
+    """One question's outcome, kept so cells can be compared question by question."""
+
+    id: str
+    refused: bool
+    on_target: bool
+    recall: float
+    named_ids: list[str]
+    ungrounded_ids: list[str]
+    unsupported_citations: list[str]
+    text: str
+
+    def as_json(self) -> dict[str, object]:
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -56,11 +118,25 @@ class AnswerScores:
     on_target: int
     refused: int
     with_unsupported_citations: int
+    recall_sum: float = 0.0
+    named_ids: int = 0
+    ungrounded: int = 0
+    records: tuple[QuestionRecord, ...] = ()
 
     @property
     def answer_utility(self) -> float:
         """Fraction of questions whose answer names a relevant technique."""
         return self.on_target / self.questions if self.questions else 0.0
+
+    @property
+    def answer_recall(self) -> float:
+        """Mean fraction of each question's relevant techniques named; a refusal is 0."""
+        return self.recall_sum / self.questions if self.questions else 0.0
+
+    @property
+    def ungrounded_id_rate(self) -> float:
+        """Share of technique ids named in answers that no retrieved passage carried."""
+        return self.ungrounded / self.named_ids if self.named_ids else 0.0
 
     @property
     def refusal_rate(self) -> float:
@@ -74,6 +150,8 @@ class AnswerScores:
         return {
             "questions": self.questions,
             "answer_utility": round(self.answer_utility, 4),
+            "answer_recall": round(self.answer_recall, 4),
+            "ungrounded_id_rate": round(self.ungrounded_id_rate, 4),
             "refusal_rate": round(self.refusal_rate, 4),
             "unsupported_citation_rate": round(self.unsupported_citation_rate, 4),
         }
@@ -91,21 +169,59 @@ def score_answers(
     if len(answers) != len(queries):
         raise ValueError(f"{len(answers)} answers but {len(queries)} queries")
 
-    on_target = refused = unsupported = 0
+    on_target = refused = unsupported = named_total = ungrounded_total = 0
+    recall_sum = 0.0
+    records: list[QuestionRecord] = []
     for answer, query in zip(answers, queries, strict=True):
         # Both refusal shapes count: a defence blocking the answer, and the
         # pipeline finding nothing to answer from.
         if answer.blocked or answer.text.strip() == no_evidence:
             refused += 1
+            records.append(
+                QuestionRecord(
+                    id=query.id,
+                    refused=True,
+                    on_target=False,
+                    recall=0.0,
+                    named_ids=[],
+                    ungrounded_ids=[],
+                    unsupported_citations=[],
+                    text=answer.text,
+                )
+            )
             continue
-        if names_a_relevant_technique(answer, query.relevant):
+
+        named = named_relevant(answer, query.relevant)
+        recall = len(named) / len(query.relevant) if query.relevant else 0.0
+        mentioned = technique_ids(answer.text)
+        invented = ungrounded_ids(answer)
+        if named:
             on_target += 1
         if answer.unsupported_citations:
             unsupported += 1
+        recall_sum += recall
+        named_total += len(mentioned)
+        ungrounded_total += len(invented)
+        records.append(
+            QuestionRecord(
+                id=query.id,
+                refused=False,
+                on_target=bool(named),
+                recall=recall,
+                named_ids=mentioned,
+                ungrounded_ids=invented,
+                unsupported_citations=list(answer.unsupported_citations),
+                text=answer.text,
+            )
+        )
 
     return AnswerScores(
         questions=len(queries),
         on_target=on_target,
         refused=refused,
         with_unsupported_citations=unsupported,
+        recall_sum=recall_sum,
+        named_ids=named_total,
+        ungrounded=ungrounded_total,
+        records=tuple(records),
     )
