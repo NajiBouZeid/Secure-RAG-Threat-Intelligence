@@ -8,6 +8,7 @@ leak into the next.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from threatrag.config import Config
@@ -34,6 +35,23 @@ class FakeResult:
     def __init__(self, attack_id: str, succeeded: bool) -> None:
         self.attack_id = attack_id
         self.succeeded = succeeded
+
+
+def test_per_question_records_survive_the_json_round_trip(tmp_path: Path) -> None:
+    """M7 kept only aggregates, so a better metric needed new runs. The records
+    are what let the next metric be scored from answers already on disk."""
+    writer = ResultWriter(tmp_path / "sweep.jsonl")
+    result = _result("none", "qwen2.5:7b")
+    result.records = [{"id": "q", "recall": 0.5, "text": "Uses T1105."}]
+
+    writer.write(result)
+
+    row = json.loads(writer.path.read_text(encoding="utf-8").splitlines()[0])
+    assert row["records"] == [{"id": "q", "recall": 0.5, "text": "Uses T1105."}]
+
+
+def test_a_result_without_records_still_writes() -> None:
+    assert _result("none", "qwen2.5:7b").as_json()["records"] == []
 
 
 def _base_config() -> Config:

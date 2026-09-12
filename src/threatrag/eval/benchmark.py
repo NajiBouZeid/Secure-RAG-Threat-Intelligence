@@ -82,6 +82,11 @@ class CellResult:
     answers: dict[str, float | int]
     retrieval: dict[str, float | int] | None
     seconds: float
+    # One entry per gold question, answer text included. M7 kept only the
+    # aggregates, so a stronger metric could not be scored from its runs and
+    # had to be paid for with new ones; keeping the answers is what prevents
+    # that happening twice.
+    records: list[dict[str, object]] = field(default_factory=list)
 
     def as_json(self) -> dict[str, object]:
         payload = asdict(self)

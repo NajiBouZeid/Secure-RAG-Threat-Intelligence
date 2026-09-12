@@ -27,6 +27,7 @@ from threatrag.eval import goldset as goldset_module
 from threatrag.eval.benchmark import (
     CellResult,
     ResultWriter,
+    RouteResult,
     answer_gold_questions,
     build_cells,
     cell_config,
@@ -790,6 +791,18 @@ def benchmark(
     repeats: Annotated[
         int, typer.Option("--repeats", help="Runs per cell; >1 exposes unstable attacks.")
     ] = 1,
+    sets: Annotated[
+        str | None,
+        typer.Option("--sets", help="Comma-separated defence set labels to run; default all."),
+    ] = None,
+    skip_attacks: Annotated[
+        bool,
+        typer.Option(
+            "--skip-attacks",
+            help="Score answer utility and retrieval only. Use a separate --out: the "
+            "rows carry no attack routes.",
+        ),
+    ] = False,
 ) -> None:
     """Sweep defence sets x models over both attack corpora and the utility axes.
 
@@ -810,9 +823,14 @@ def benchmark(
     if out.exists() and fresh:
         out.unlink()
     writer = ResultWriter(out)
-    cells = build_cells(
-        list(SWEEP_SETS), [m.strip() for m in models.split(",") if m.strip()], repeats
-    )
+    chosen = list(SWEEP_SETS)
+    if sets is not None:
+        wanted = {label.strip() for label in sets.split(",") if label.strip()}
+        unknown = wanted - {label for label, _ in SWEEP_SETS}
+        if unknown:
+            raise typer.BadParameter(f"Unknown defence sets {sorted(unknown)}")
+        chosen = [entry for entry in SWEEP_SETS if entry[0] in wanted]
+    cells = build_cells(chosen, [m.strip() for m in models.split(",") if m.strip()], repeats)
     pending = list(iter_cells(cells, writer))
     console.print(
         f"{len(pending)} of {len(cells)} cells to run "
@@ -849,11 +867,13 @@ def benchmark(
         # Fixed port: the poison text embeds this URL, so an ephemeral one
         # changes the document, its embedding and its rank between cells, and
         # the sweep would attribute that to the defence being measured.
-        with ExfiltrationSink(port=sink_port) as sink:
-            runner = factory.build_attack_runner(cfg, sink=sink)
-            routes = [run_attacks(runner.run, m4, "m4")]
-            if evasion:
-                routes.append(run_attacks(runner.run, evasion, "evasion"))
+        routes: list[RouteResult] = []
+        if not skip_attacks:
+            with ExfiltrationSink(port=sink_port) as sink:
+                runner = factory.build_attack_runner(cfg, sink=sink)
+                routes.append(run_attacks(runner.run, m4, "m4"))
+                if evasion:
+                    routes.append(run_attacks(runner.run, evasion, "evasion"))
 
         pipeline = factory.build_answer_pipeline(cfg)
 
@@ -876,11 +896,13 @@ def benchmark(
             answers=answers.as_row(),
             retrieval=retrieval_cache[cell.label],
             seconds=timed(started),
+            records=[record.as_json() for record in answers.records],
         )
         writer.write(result)
         landed = ", ".join(f"{r.corpus} {r.landed}/{r.total}" for r in result.routes)
         console.print(
-            f"    {landed} | utility {answers.answer_utility:.3f} "
+            f"    {landed or 'attacks skipped'} | utility {answers.answer_utility:.3f} "
+            f"| recall {answers.answer_recall:.3f} | ungrounded {answers.ungrounded_id_rate:.3f} "
             f"| refused {answers.refusal_rate:.3f} | {result.seconds / 60:.1f} min"
         )
 
