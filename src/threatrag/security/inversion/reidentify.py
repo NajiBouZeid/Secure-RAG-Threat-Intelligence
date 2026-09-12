@@ -77,7 +77,38 @@ class ReferenceCorpus(BaseModel):
 
     @property
     def size(self) -> int:
+        """Reference vectors, which is passages rather than documents when split."""
         return len(self.doc_ids)
+
+    @property
+    def documents(self) -> int:
+        return len(set(self.doc_ids))
+
+
+def split_passages(text: str, max_chars: int) -> list[str]:
+    """Cut a document into windows the attacker can embed without truncation.
+
+    The attacker's own splitter, not this system's chunker: he holds the
+    published source, not the ingest configuration. Breaks on whitespace so a
+    window never ends mid-word, and never drops text -- a word longer than the
+    window becomes a window of its own rather than disappearing.
+    """
+    if max_chars <= 0:
+        raise ValueError(f"max_chars must be positive, got {max_chars}")
+    passages: list[str] = []
+    current: list[str] = []
+    length = 0
+    for word in text.split():
+        added = len(word) + (1 if current else 0)
+        if current and length + added > max_chars:
+            passages.append(" ".join(current))
+            current, length = [], 0
+            added = len(word)
+        current.append(word)
+        length += added
+    if current:
+        passages.append(" ".join(current))
+    return passages
 
 
 class ReidentifyRow(BaseModel):
@@ -135,6 +166,7 @@ def build_reference(
     embedder: Embedder,
     *,
     batch_size: int = 128,
+    passage_chars: int | None = None,
 ) -> tuple[ReferenceCorpus, Matrix]:
     """Embed public source documents as the attacker would.
 
@@ -142,6 +174,13 @@ def build_reference(
     sources, not the ingest configuration, and matching stolen chunk vectors
     against the very chunks they came from would measure nothing but the
     identity function.
+
+    ``passage_chars`` splits each document into the attacker's own windows,
+    every one mapped back to its document. Without it a long document is one
+    vector, and the encoder truncates it: MiniLM reads 256 tokens, so a
+    fifty-page vendor report is represented by its cover page and a chunk from
+    page thirty cannot be recognised. That is a weakness of the measurement, not
+    a protection, and ``None`` keeps it only so earlier results reproduce.
     """
     doc_ids: list[str] = []
     source_refs: list[str] = []
@@ -155,12 +194,18 @@ def build_reference(
             texts.clear()
 
     for document in documents:
-        doc_ids.append(document.id)
-        source_refs.append(document.source_ref)
-        titles.append(document.title)
-        texts.append(document.text)
-        if len(texts) >= batch_size:
-            flush()
+        passages = (
+            [document.text]
+            if passage_chars is None
+            else split_passages(document.text, passage_chars)
+        )
+        for passage in passages:
+            doc_ids.append(document.id)
+            source_refs.append(document.source_ref)
+            titles.append(document.title)
+            texts.append(passage)
+            if len(texts) >= batch_size:
+                flush()
     flush()
 
     matrix = (

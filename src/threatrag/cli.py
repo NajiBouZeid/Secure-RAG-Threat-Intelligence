@@ -649,6 +649,14 @@ def invert_reidentify(
     sources: Annotated[
         str, typer.Option("--sources", help="Public corpora the attacker rebuilds.")
     ] = ",".join(PUBLIC_SOURCES),
+    passage_chars: Annotated[
+        int | None,
+        typer.Option(
+            "--passage-chars",
+            help="Split public documents into windows of this many characters before "
+            "embedding. Omit to embed whole documents, as M5 and M7 did.",
+        ),
+    ] = None,
     dump: Annotated[
         Path | None,
         typer.Option("--dump", help="Write the per-chunk rows as JSON evidence."),
@@ -680,8 +688,11 @@ def invert_reidentify(
             yield from source.load()
 
     with console.status("Rebuilding the public corpus as the attacker would..."):
-        corpus, reference = build_reference(documents(), encoder)
-    console.print(f"attacker reference: [bold]{corpus.size}[/] public documents")
+        corpus, reference = build_reference(documents(), encoder, passage_chars=passage_chars)
+    console.print(
+        f"attacker reference: [bold]{corpus.documents}[/] public documents as "
+        f"[bold]{corpus.size}[/] vectors"
+    )
 
     report = reidentify(sample.chunks, stolen, corpus, reference)
 

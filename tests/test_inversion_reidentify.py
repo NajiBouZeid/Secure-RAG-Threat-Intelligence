@@ -13,7 +13,12 @@ import numpy as np
 
 from threatrag.domain.models import TLP, Chunk, Document, SourceType
 from threatrag.domain.types import Matrix, Vector
-from threatrag.security.inversion.reidentify import build_reference, reidentify, topic_terms
+from threatrag.security.inversion.reidentify import (
+    build_reference,
+    reidentify,
+    split_passages,
+    topic_terms,
+)
 
 
 class PlacedEmbedder:
@@ -257,6 +262,55 @@ def test_targets_with_no_stolen_vector_are_skipped() -> None:
     report = reidentify([target], {}, corpus, reference)
 
     assert report.rows == []
+
+
+def test_split_passages_keeps_every_word_in_order() -> None:
+    text = "alpha beta gamma delta epsilon zeta"
+
+    passages = split_passages(text, 11)
+
+    assert " ".join(passages).split() == text.split()
+    assert all(len(passage) <= 11 for passage in passages)
+
+
+def test_split_passages_never_breaks_a_word() -> None:
+    passages = split_passages("short averyveryverylongword tail", 8)
+
+    assert passages == ["short", "averyveryverylongword", "tail"]
+
+
+def test_split_passages_rejects_a_non_positive_width() -> None:
+    try:
+        split_passages("anything", 0)
+    except ValueError:
+        return
+    raise AssertionError("expected ValueError")
+
+
+def test_a_chunk_from_deep_in_a_long_document_is_recognised_from_its_passage() -> None:
+    # The whole report embeds as its cover page, as a truncating encoder would;
+    # only the attacker's passage windows carry what page thirty says.
+    embedder = PlacedEmbedder({"cover": [0.0, 1.0, 0.0], "ransomware": [1.0, 0.0, 0.0]})
+    report_doc = _document("vendor:R", "R", "cover ransomware", "Annual report")
+    other = _document("T1003", "T1003", "unplaced", "T1003 OS Credential Dumping (technique)")
+    target = _chunk("vendor:R#30", "vendor:R", "ransomware")
+    stolen = {target.id: np.array([1.0, 0.0, 0.0], np.float32)}
+
+    corpus, reference = build_reference([report_doc, other], embedder, passage_chars=6)
+    report = reidentify([target], stolen, corpus, reference)
+
+    assert corpus.size == 3
+    assert corpus.documents == 2
+    assert report.rows[0].correct is True
+
+
+def test_whole_document_embedding_stays_the_default() -> None:
+    embedder, documents = _corpus()
+
+    corpus, reference = build_reference(documents, embedder)
+
+    assert corpus.size == corpus.documents == 2
+    assert reference.shape == (2, 3)
 
 
 def test_a_zero_vector_in_the_reference_does_not_win_every_match() -> None:
