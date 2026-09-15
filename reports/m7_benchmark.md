@@ -301,7 +301,7 @@ what makes the comparison usable.
 | internal-note chunks present to steal | **34** | **6** |
 | internal-note subjects leaked | **12** | **2** |
 | vendor-report chunks present | 20 | 20 |
-| vendor-report subjects leaked | **10** | **10** |
+| vendor-report subjects leaked (corrected below) | **10** | **10** |
 | identifier quoted outright | 0 | 0 |
 
 **D5 removes 28 of 34 confidential note chunks from the stolen artefact and
@@ -334,23 +334,62 @@ queries. Two collections searched and merged by score is score-equivalent to one
 collection, but not tie-for-tie identical to it. The claim that survives is that
 segregation has no measurable retrieval cost, not that it is bit-identical.
 
-### The gap this axis found: vendor reports are unprotected and leak at 50%
+### Correction (2026-09-15): the vendor "gap" was the attacker's blind spot, not the defence's
 
-**20 vendor-report chunks sit in the hidden population and 10 disclose their
-subject — identical in both arms.** Vendor reports are not part of the corpus an
-attacker rebuilds from public sources, so under this attack they behave exactly
-like confidential material; but `restrict_above: green` leaves everything at
-VENDOR tier in the public collection, so segregation does nothing for them.
+This section first reported that vendor-report chunks leak their subject at 50%
+and that nothing defends them. That was measured against the wrong attacker.
+The ten vendor reports are **public PDFs, TLP:CLEAR** (M-Trends, CrowdStrike's
+Global Threat Report and the rest), and the attacker's reference corpus held
+ATT&CK and NVD only. A vendor chunk could therefore never be *recognised*, only
+mistaken for its nearest ATT&CK neighbour, which the subject metric then
+counted as a leak. An attacker who can rebuild NVD can download those PDFs just
+as easily.
 
-M5 never surfaced this because its reporting centred on the internal notes.
-Half of the sampled vendor chunks leak their subject to a stolen-vector attack,
-and no defence in this project currently addresses it. Raising the threshold
-would move 2729 chunks into the restricted collection and is a classification
-decision with a real retrieval-topology cost, not a config tweak — so it is
-recorded here rather than made silently.
+Re-run with the vendor reports in the reference, both arms in one session, same
+seed, the same 334 sampled chunks:
 
-Evidence: `reports/data/m7_reidentify_public.json`,
-`reports/data/m7_reidentify_undefended.json`.
+| | undefended | stolen public collection |
+|---|---|---|
+| vendor chunks recognised as their own report | **20 / 20** | **20 / 20** |
+| vendor subjects "leaked" | 0 (was 10) | 0 (was 10) |
+| ATT&CK + NVD chunks recognised | **181 / 280 = 0.646** (was 107) | 181 / 280 |
+| internal-note subjects leaked | **12 / 34** | **2 / 6** |
+| identifier quoted outright | 0 | 0 |
+
+* **Vendor chunks do not leak; they are recognised, all twenty.** Worse on
+  paper, correct in fact: nothing in them is secret, so there is nothing for a
+  defence to protect. The earlier suggestion to raise `restrict_above` and move
+  2729 public chunks into the restricted collection is **withdrawn**.
+  Classifying public documents as restricted so that D5 has a leak to stop would
+  rig the benchmark. Licensed vendor intelligence would be TLP:AMBER, and D5
+  already handles that by classification; this corpus contains none.
+* **D5's result holds against the stronger attacker: note disclosure 12 to 2.**
+* **The totals hide turnover.** Of the 12 notes that leak to the undefended
+  attacker, 7 were among M7's 12; five dropped out and five new ones came in.
+  In the public arm, one of the two is new. The count is stable and the
+  membership is not: *which* note leaks depends on what the attacker put in
+  their reference. Read note-level examples as examples, not as an inventory.
+* **The weaker attacker undercounted public recognition.** ATT&CK went from
+  55/153 to 131/153 (80 gained, 4 lost). The original reference embedded each
+  document whole, and MiniLM reads only the first 256 tokens, so a chunk from
+  deep inside a long technique page had nothing to match. NVD went from 52/127
+  to 50/127 (3 gained, 5 lost): the lost chunks now match a sibling advisory
+  with a near-identical description (CVE-2026-0700 to CVE-2026-0701,
+  CVE-2026-22223 to CVE-2026-22221), because at passage granularity
+  near-duplicate CVEs compete. **M5's 0.382 is a lower bound.**
+
+Method. The reference splits every public document into whitespace-bounded
+passages of at most 600 characters: 6937 documents become 23053 vectors. The
+width was chosen by tokenising every passage before the run, not by rule of
+thumb: at the planned 1000 characters, 60% of ATT&CK and 44% of NVD passages
+exceeded the 256-token window and would have been silently truncated. At 600,
+ATT&CK is 0%, vendor 0.1% and NVD 5.5% (dense URL and hash text). 11 and 12
+minutes per arm.
+
+Evidence, weaker attacker: `reports/data/m7_reidentify_public.json`,
+`reports/data/m7_reidentify_undefended.json`. Stronger attacker:
+`reports/data/reidentify_strong_undefended.json`,
+`reports/data/reidentify_strong_public.json`.
 
 ## What M7 does not settle
 
@@ -366,8 +405,11 @@ Evidence: `reports/data/m7_reidentify_public.json`,
 * **Why 1.5b out-scores 7b is now an open question** rather than a suspected
   artefact — verbosity was the hypothesis, and it was tested and rejected.
 * **The M6 cap discrepancy has a plausible cause and no proof.**
-* **Vendor reports leak their subject at 50% under the stolen-index attack and
-  nothing defends them.** Found by this milestone, not fixed by it.
+* **Vendor reports were first reported as leaking at 50% with no defence.
+  Corrected 2026-09-15:** they are public, and an attacker who holds them
+  recognises all 20 sampled chunks. There was nothing confidential to leak.
+* **Which notes leak is not stable across attackers.** The count held at 12 of
+  34 when the reference changed, but five of the twelve notes are different.
 * **The two routes are still not comparable on one scale.** The prompt route is
   counted in attacks landed out of 7, the index route in chunks whose subject
   leaked. Both are reported; neither converts into the other, and no single
@@ -380,6 +422,13 @@ Evidence: `reports/data/m7_reidentify_public.json`,
 ```
 docker compose up -d qdrant
 python -m threatrag.cli benchmark --repeats 3
+```
+
+The stronger re-identification attacker, both arms:
+
+```
+python -m threatrag.cli invert reidentify --sources attack_cti,nvd_cve,vendor_report --passage-chars 600 --dump reports/data/reidentify_strong_undefended.json
+python -m threatrag.cli invert reidentify --sources attack_cti,nvd_cve,vendor_report --passage-chars 600 --overlay configs/experiments/attacker_public_view.yaml --dump reports/data/reidentify_strong_public.json
 ```
 
 Resumable: each cell is written to `reports/data/m7_sweep.jsonl` as it finishes
