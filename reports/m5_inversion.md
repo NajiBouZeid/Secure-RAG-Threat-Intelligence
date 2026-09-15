@@ -270,6 +270,16 @@ the identity function and report it as an attack.
 reconstruction** — the attacker learns which ATT&CK technique or CVE a stolen
 vector encodes by rebuilding a corpus he was always entitled to.
 
+> **A lower bound (added 2026-09-15).** This reference embeds each document
+> whole, and MiniLM reads only its first 256 tokens, so a chunk from deep inside
+> a long ATT&CK page has nothing to match. Splitting the reference into passages
+> of at most 600 characters, the same 280 chunks are recognised at **181/280 =
+> 0.646**: ATT&CK 55 to 131, NVD 52 to 50. The 12/34 note disclosure count is
+> unchanged, though five of the twelve notes differ. The 10 vendor chunks
+> counted in the hidden row below were public PDFs missing from the reference;
+> with them added, all 20 sampled vendor chunks are recognised outright. See the
+> correction in `m7_benchmark.md`.
+
 The confidential notes are the finding. Nothing public matches them, so they
 cannot be recognised at all — but their nearest public neighbour names what
 they are about:
