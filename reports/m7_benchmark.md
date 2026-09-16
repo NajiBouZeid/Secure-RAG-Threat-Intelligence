@@ -190,6 +190,83 @@ times. A fifth could widen it the same way and swallow this effect too. The way
 to settle it is more repeats of the *baseline*, which is the cell that moves —
 not more defended cells.
 
+### Follow-up (2026-09-16): 200 questions, four baseline repeats, and no single baseline
+
+The section above ends by saying more *baseline* repeats would settle the
+question. They were run: every defence set once and the undefended cell four
+times per model, at **200 questions** instead of 50, utility only (no attacks).
+Each cell is compared question by question with a paired bootstrap
+(`threatrag.eval.paired`), which removes the spread that comes from which
+questions happen to be asked.
+
+**The undefended repeats disagree with each other, so there is no single
+baseline to compare against.** The plan was to pair each defence cell with the
+undefended repeat from its own session. Comparing the answer *text*, not just
+the scores, rules that out:
+
+* At temperature 0, on the same index, two runs of the undefended 1.5b cell in
+  one session rewrote **72 of 200** answers. Another pair rewrote 9.
+* Nor does the session boundary sort them. 1.5b repeat #2 (2026-09-16) matches
+  repeat #1 (2026-09-15) on all but 5 answers, and both were the first cell run
+  after Ollama started. 7b repeat #1 (2026-09-12) is 60 answers away from the
+  three later repeats and closest to `provenance_fence`, which was also the
+  first 7b cell of its session. Ollama loaded the model once for the whole
+  2026-09-16 run, so a reload is not the cause either. Caching inside the model
+  server is a plausible explanation; it is not established.
+
+Choosing any one repeat as "the" baseline would therefore move the result, and
+choosing among them after seeing the numbers would rig it. The report instead
+pairs every cell with **every** undefended repeat of its model and gives the
+range. A change counts as a finding only when the 95% interval excludes zero,
+on the same side, against all of them. The undefended repeats go through the
+same comparison against each other, and their rows are the noise floor.
+
+| cell | 7b utility | 7b Δ hit vs repeats | 1.5b utility | 1.5b Δ hit vs repeats |
+|---|---|---|---|---|
+| none #1-#4 | 0.185, 0.175, 0.175, 0.175 | -0.010 to +0.010 | 0.305, 0.305, 0.300, 0.300 | -0.005 to +0.005 |
+| `provenance_fence` | 0.185 | +0.000 to +0.010 | 0.305 | +0.000 to +0.005 |
+| `source_cap` | 0.165 | **-0.020 to -0.010** | 0.305 | +0.000 to +0.005 |
+| `egress_filter` | 0.175 | -0.010 to +0.000 | 0.305 | +0.000 to +0.005 |
+| `injection_screen` | 0.175 | -0.010 to +0.000 | 0.305 | +0.000 to +0.005 |
+| `corroboration` | 0.175 | -0.010 to +0.000 | 0.305 | +0.000 to +0.005 |
+| all five | 0.170 | -0.015 to -0.005 | 0.305 | +0.000 to +0.005 |
+
+Refusal rate is 0.000 in all 20 cells.
+
+* **No defence set clears the noise floor on either model.** Recall gives the
+  same verdict. The largest movement is 7b `source_cap`, which scores below
+  every undefended repeat (3 to 5 questions go from hit to miss, 1 the other
+  way), but its interval still reaches zero against each of them. That is a
+  lean, not a result.
+* **The M7 suspicion that `source_cap` costs 1.5b utility is not confirmed.**
+  At 50 questions it scored 0.24-0.28 against a 0.28-0.30 baseline. At 200 it
+  scores 0.305, level with the undefended repeats, and so does the full set.
+* **Scores are far steadier than answers.** A defence set on 1.5b rewrites 120
+  to 147 answers and still flips only 8 to 11 questions between hit and miss,
+  in both directions. Most of the rewriting does not change whether a relevant
+  identifier appears. The 1.5b defence cells all ran on 2026-09-15, and the
+  only undefended 1.5b cell from that session was the first one after Ollama
+  started, so how much of their rewriting comes from the defence and how much
+  from run state cannot be separated.
+
+Two limits on what the interval means. The bootstrap resamples questions, so it
+prices the choice of question set only; run-to-run variation is what the four
+repeats are for, and four is still a small sample of it. And refusals are
+counted only when the model declines outright. Answers that say the context
+does not contain the information while still naming identifiers are scored as
+ordinary answers.
+
+**Soft refusals account for part of the 1.5b-versus-7b gap, not all of it.** By
+a phrase match ("cannot", "does not contain", "not provided" and similar), 7b
+gives that kind of answer on 37 to 43 of 200 questions across its ten cells and
+1.5b on 1 to 6. On
+the answers that are not soft refusals, the undefended 7b repeats hit 0.21 and
+1.5b hits 0.30. The phrase match is an estimate, not a classifier.
+
+Evidence: `reports/data/utility_sweep.jsonl` (every answer, per question), and
+`python scripts/utility_report.py reports/data/utility_sweep.jsonl` for the full
+table.
+
 ### Is 1.5b better, or just longer? Neither, it turns out
 
 1.5b scores roughly double 7b on utility (about 0.28 against about 0.15), which
@@ -395,15 +472,17 @@ Evidence, weaker attacker: `reports/data/m7_reidentify_public.json`,
 
 * **`exf-002` on 1.5b is still not reproducible**, and three repeats expose it
   without explaining it.
-* **The utility axis is under-powered on 7b**, whose baseline alone spans
-  0.14-0.18 and covers every defence set at 50 questions.
-* **Whether `source_cap` really costs 1.5b utility is unresolved.** It is the
-  only effect that sits outside a baseline range here (0.24-0.28 against
-  0.28-0.30), but 7b's baseline widened by 0.02 as soon as a fourth measurement
-  was taken, and 1.5b's has only four. More baseline repeats would settle it;
-  more defended cells would not.
-* **Why 1.5b out-scores 7b is now an open question** rather than a suspected
-  artefact — verbosity was the hypothesis, and it was tested and rejected.
+* **No defence set's utility cost is resolved on either model.** At 200
+  questions with four undefended repeats, every set stays within what
+  re-running the undefended cell produces. The M7 suspicion about `source_cap`
+  on 1.5b was not confirmed (follow-up, 2026-09-16); 7b `source_cap` leans
+  lower without clearing zero.
+* **Answers at temperature 0 are not reproducible on this setup.** Identical
+  undefended runs in one session rewrote up to 72 of 200 answers. The cause is
+  not established.
+* **Why 1.5b out-scores 7b is only partly explained.** Verbosity was tested
+  and rejected. 7b's soft refusals account for part of the gap, but on the
+  answers that are not soft refusals it still hits 0.21 against 0.30.
 * **The M6 cap discrepancy has a plausible cause and no proof.**
 * **Vendor reports were first reported as leaking at 50% with no defence.
   Corrected 2026-09-15:** they are public, and an attacker who holds them
@@ -429,6 +508,14 @@ The stronger re-identification attacker, both arms:
 ```
 python -m threatrag.cli invert reidentify --sources attack_cti,nvd_cve,vendor_report --passage-chars 600 --dump reports/data/reidentify_strong_undefended.json
 python -m threatrag.cli invert reidentify --sources attack_cti,nvd_cve,vendor_report --passage-chars 600 --overlay configs/experiments/attacker_public_view.yaml --dump reports/data/reidentify_strong_public.json
+```
+
+The utility follow-up, 200 questions and four undefended repeats:
+
+```
+python -m threatrag.cli benchmark --skip-attacks --questions 200 --out reports/data/utility_sweep.jsonl
+python -m threatrag.cli benchmark --skip-attacks --questions 200 --sets none --repeats 4 --out reports/data/utility_sweep.jsonl
+python scripts/utility_report.py reports/data/utility_sweep.jsonl
 ```
 
 Resumable: each cell is written to `reports/data/m7_sweep.jsonl` as it finishes
