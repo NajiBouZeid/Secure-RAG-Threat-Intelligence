@@ -118,7 +118,31 @@ def test_hybrid_prefetch_is_never_shallower_than_k(monkeypatch: pytest.MonkeyPat
     store.search_hybrid("all-minilm", np.ones(3, dtype=np.float32), "T1055", 80)
 
     assert [p.limit for p in client.queries[0]["prefetch"]] == [80, 80]
-    assert client.queries[0]["limit"] == 80
+    assert client.queries[0]["limit"] == 160
+
+
+def test_fused_ties_are_broken_by_chunk_id_before_the_cut(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Qdrant returns exactly tied RRF scores in no stable order; cut at k on
+    the server, a tie at the boundary decides which passage the caller gets."""
+    client = FakeClient()
+    store = _store(monkeypatch, client)
+
+    def point(ref: str, score: float) -> Any:
+        return SimpleNamespace(payload=QdrantVectorStore._payload(_chunk(ref, "x")), score=score)
+
+    orders = [
+        [point("T0003", 0.5), point("T0002", 0.33), point("T0001", 0.33)],
+        [point("T0003", 0.5), point("T0001", 0.33), point("T0002", 0.33)],
+    ]
+    results = []
+    for order in orders:
+        client.query_points = lambda collection, _o=order, **kwargs: SimpleNamespace(points=_o)  # type: ignore[method-assign]
+        hits = store.search_hybrid("all-minilm", np.ones(3, dtype=np.float32), "T1055", 2)
+        results.append([hit.chunk.source_ref for hit in hits])
+
+    assert results == [["T0003", "T0001"], ["T0003", "T0001"]]
 
 
 def test_a_stopword_question_falls_back_to_the_dense_ranking(

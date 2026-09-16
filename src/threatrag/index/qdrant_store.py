@@ -364,14 +364,24 @@ class QdrantVectorStore:
                     filter=access,
                 )
             )
+        # Every fused candidate, not just k. RRF scores tie exactly -- rank 3 in
+        # one ranking alone scores the same as rank 3 in the other alone -- and
+        # Qdrant returns tied points in no stable order. Measured: 468 of 1250
+        # evaluation queries came back ordered differently on an immediate
+        # repeat, while both rankings on their own repeated exactly. Cut at k
+        # on the server, a tie at the boundary decides *which* passage the
+        # caller gets. So the whole list comes back, ties are broken by chunk
+        # id, and the cut happens here: arbitrary, but the same every time.
         response = self._client.query_points(
             self._collection,
             prefetch=prefetch,
             query=qm.FusionQuery(fusion=qm.Fusion.RRF),
-            limit=k,
+            limit=depth * len(prefetch),
             with_payload=True,
         )
-        return self._hits(response.points)
+        hits = self._hits(response.points)
+        hits.sort(key=lambda hit: (-hit.score, hit.chunk.id))
+        return hits[:k]
 
     def _hits(self, points: Sequence[Any]) -> list[RetrievedChunk]:
         return [
