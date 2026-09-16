@@ -1,10 +1,16 @@
 """Paired utility comparison over a utility-only benchmark JSONL.
 
-Every cell is compared with the first undefended repeat of its own model,
-question by question. The later undefended repeats go through the same
-comparison, and those rows are the point of the table: they are an exact
-configuration compared with itself, so whatever they show is noise, and a
-defence row is only a finding when it clears them.
+Every cell is compared, question by question, with *every* undefended repeat of
+its own model, and the report gives the range over those comparisons. There is
+no single baseline because the undefended repeats disagree with each other: at
+temperature 0 on the same index, two runs of one configuration in one session
+rewrote up to 72 of 200 answers, so whichever repeat was chosen as "the"
+baseline would move the result. An undefended repeat goes through the same
+comparison against the other repeats, and those rows are the noise floor.
+
+A cell's change counts as a finding only when its interval excludes zero, on
+the same side, against every repeat. Anything less is within what re-running
+the undefended configuration already produces.
 
     python scripts/utility_report.py reports/data/utility_sweep.jsonl
 """
@@ -47,9 +53,23 @@ def compare(baseline: dict[str, Any], treated: dict[str, Any], field: str) -> Pa
     return paired_delta([base[i] for i in ids], [treat[i] for i in ids])
 
 
-def _interval(delta: PairedDelta) -> str:
-    mark = " *" if delta.excludes_zero else ""
-    return f"{delta.mean_delta:+.3f} [{delta.low:+.3f}, {delta.high:+.3f}]{mark}"
+def _span(values: Sequence[float], fmt: str) -> str:
+    low, high = min(values), max(values)
+    return format(low, fmt) if low == high else f"{format(low, fmt)} to {format(high, fmt)}"
+
+
+def _clears_every(deltas: Sequence[PairedDelta]) -> str:
+    """Name the direction when every comparison excludes zero on one side."""
+    if all(delta.low > 0 for delta in deltas):
+        return "higher"
+    if all(delta.high < 0 for delta in deltas):
+        return "lower"
+    return "no"
+
+
+def _rewritten(baseline: dict[str, Any], treated: dict[str, Any]) -> int:
+    base = {record["id"]: record["text"] for record in baseline["records"]}
+    return sum(record["text"] != base[record["id"]] for record in treated["records"])
 
 
 def report(rows: Sequence[dict[str, Any]]) -> str:
@@ -59,37 +79,39 @@ def report(rows: Sequence[dict[str, Any]]) -> str:
             (row for row in rows if row["model"] == model),
             key=lambda row: (row["label"] != BASELINE, row["label"], row["repeat"]),
         )
-        baseline = next(
-            (row for row in cells if row["label"] == BASELINE and row["repeat"] == 1), None
-        )
-        if baseline is None:
-            lines.append(f"## {model}\n\nno `{BASELINE}#1` cell to compare against\n")
+        repeats = [row for row in cells if row["label"] == BASELINE]
+        lines += [f"## {model}", ""]
+        if len(repeats) < 2:
+            lines.append(f"needs at least two `{BASELINE}` repeats to measure the noise floor\n")
             continue
 
         lines += [
-            f"## {model}",
+            f"Each cell paired against every `{BASELINE}` repeat other than itself "
+            f"({len(repeats)} repeats, {len(repeats[0]['records'])} questions); columns give "
+            "the range over those comparisons. *Finding* is `higher`/`lower` only when the "
+            "95% interval excludes zero on that side against every repeat, on hit or on recall.",
             "",
-            f"Paired against `{BASELINE}#1` over {len(baseline['records'])} questions. "
-            "`*` marks an interval excluding zero, which is not by itself a finding: "
-            f"compare it with the `{BASELINE}` repeats.",
-            "",
-            "| cell | utility | recall | ungrounded | refused | Δ recall [95% CI] "
-            "| lost/gained | Δ hit [95% CI] |",
-            "|---|---|---|---|---|---|---|---|",
+            "| cell | utility | recall | ungrounded | refused | Δ hit | Δ recall "
+            "| recall lost/gained | answers rewritten | finding |",
+            "|---|---|---|---|---|---|---|---|---|---|",
         ]
         for row in cells:
             answers = row["answers"]
-            name = f"{row['label']}#{row['repeat']}"
-            if row is baseline:
-                deltas = "— | — | —"
-            else:
-                recall = compare(baseline, row, "recall")
-                hit = compare(baseline, row, "on_target")
-                deltas = f"{_interval(recall)} | {recall.lost}/{recall.gained} | {_interval(hit)}"
+            others = [base for base in repeats if base is not row]
+            hit = [compare(base, row, "on_target") for base in others]
+            recall = [compare(base, row, "recall") for base in others]
+            verdicts = {_clears_every(hit), _clears_every(recall)} - {"no"}
+            finding = "/".join(sorted(verdicts)) or "no"
+            lost_gained = sorted({f"{d.lost}/{d.gained}" for d in recall})
             lines.append(
-                f"| {name} | {answers['answer_utility']:.3f} | {answers['answer_recall']:.3f} "
-                f"| {answers['ungrounded_id_rate']:.3f} | {answers['refusal_rate']:.3f} "
-                f"| {deltas} |"
+                f"| {row['label']}#{row['repeat']} | {answers['answer_utility']:.3f} "
+                f"| {answers['answer_recall']:.3f} | {answers['ungrounded_id_rate']:.3f} "
+                f"| {answers['refusal_rate']:.3f} "
+                f"| {_span([d.mean_delta for d in hit], '+.3f')} "
+                f"| {_span([d.mean_delta for d in recall], '+.3f')} "
+                f"| {', '.join(lost_gained)} "
+                f"| {_span([_rewritten(base, row) for base in others], 'd')} "
+                f"| {finding} |"
             )
         lines.append("")
     return "\n".join(lines)
