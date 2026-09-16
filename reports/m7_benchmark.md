@@ -493,8 +493,13 @@ Evidence, weaker attacker: `reports/data/m7_reidentify_public.json`,
   counted in attacks landed out of 7, the index route in chunks whose subject
   leaked. Both are reported; neither converts into the other, and no single
   "security score" is offered.
-* **BM25 stays out**, as M6 decided: it is a retriever change, and `poi-001` is
-  a keyword-stuffing attack that a keyword retriever may well strengthen.
+* **BM25 stayed out of M7**, as M6 decided: it is a retriever change, and
+  `poi-001` is a keyword-stuffing attack that a keyword retriever may well
+  strengthen. Measured since in `reports/hybrid_retrieval.md` (2026-09-16):
+  hybrid retrieval raises gold-set recall@5 from 0.1631 to 0.2079-0.2153 and
+  finds documents by identifier 83-100% of the time against dense's 5-19%. The
+  attack comparison has not been run, so the question this bullet raised is
+  still open.
 
 ## Reproducing
 
