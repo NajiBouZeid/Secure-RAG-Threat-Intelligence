@@ -37,6 +37,7 @@ from threatrag.eval.benchmark import (
     timed,
 )
 from threatrag.eval.metrics import aggregate, score_query
+from threatrag.index.qdrant_store import QdrantVectorStore
 from threatrag.ingest.pipeline import IngestStats
 from threatrag.ingest.sources.nvd_api import NVD_ATTRIBUTION
 from threatrag.rag.pipeline import NO_EVIDENCE, AnswerPipeline
@@ -248,6 +249,64 @@ def ingest(
                 f"[red]dropped[/] {was - now} {name!r} vectors ({now} left). Run "
                 f"`threatrag invert prepare --embedder {name}` to re-attach them."
             )
+
+
+@app.command(name="build-hybrid")
+def build_hybrid(
+    config: ConfigOption = None,
+    overlay: OverlayOption = None,
+    source: Annotated[
+        str, typer.Option("--from", help="Dense collection to copy points and vectors from.")
+    ] = "threatrag",
+    reset: Annotated[
+        bool, typer.Option("--reset", help="Drop the hybrid collection first if it exists.")
+    ] = False,
+) -> None:
+    """Build a hybrid collection by copying a dense one and adding BM25 weights.
+
+    Nothing is re-embedded, so the dense half is bit-identical to the source
+    and the source stays untouched as the dense control.
+    """
+    cfg = _config(config, overlay)
+    if cfg.retrieval.mode != "hybrid":
+        raise typer.BadParameter(
+            "retrieval.mode is not hybrid; pass the hybrid overlay, "
+            "e.g. --overlay configs/experiments/retrieval_hybrid.yaml"
+        )
+    target_name = cfg.vector_store.collection
+    if target_name == source:
+        raise typer.BadParameter(
+            f"the hybrid collection and --from are both {source!r}; building in place would "
+            f"destroy the dense control"
+        )
+
+    dense = QdrantVectorStore(cfg.vector_store.url, source)
+    target = factory.build_qdrant_store(cfg, target_name)
+    if dense.count() == 0:
+        raise typer.BadParameter(f"source collection {source!r} is empty or missing")
+    if target.count() > 0:
+        if not reset:
+            raise typer.BadParameter(
+                f"{target_name!r} already holds {target.count()} points; pass --reset to rebuild"
+            )
+        target.drop()
+
+    target.ensure_collection(factory.vector_spec(cfg))
+    started = time.perf_counter()
+    with console.status(f"Copying {source} -> {target_name} with BM25 weights..."):
+        copied = target.copy_from(dense)
+
+    # A short copy would still produce plausible numbers, just over a smaller
+    # corpus than the control; say so rather than let the comparison run.
+    expected, stored = dense.count(), target.count()
+    if copied != expected or stored != expected:
+        console.print(f"[red]incomplete[/] copied {copied}, stored {stored}, source {expected}")
+        raise typer.Exit(code=1)
+    console.print(
+        f"[green]OK[/] {stored} points -> {target_name} in {timed(started) / 60:.1f} min "
+        f"(bm25 k1={cfg.retrieval.bm25.k1} b={cfg.retrieval.bm25.b} "
+        f"avg_len={cfg.retrieval.bm25.avg_len} title={cfg.retrieval.bm25.include_title})"
+    )
 
 
 @app.command(name="build-goldset")
