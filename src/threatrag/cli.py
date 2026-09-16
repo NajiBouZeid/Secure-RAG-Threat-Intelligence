@@ -68,13 +68,16 @@ console = Console()
 
 ConfigOption = Annotated[Path | None, typer.Option("--config", "-c", help="Base config YAML.")]
 OverlayOption = Annotated[
-    Path | None, typer.Option("--overlay", "-o", help="Experiment overlay merged over the base.")
+    list[Path] | None,
+    typer.Option(
+        "--overlay", "-o", help="Experiment overlay merged over the base; repeat to compose."
+    ),
 ]
 
 GOLDSET_FILENAME = "attack_goldset.json"
 
 
-def _config(config: Path | None, overlay: Path | None = None) -> Config:
+def _config(config: Path | None, overlay: list[Path] | None = None) -> Config:
     return load_config(config, overlay)
 
 

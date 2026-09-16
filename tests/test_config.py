@@ -68,3 +68,21 @@ def test_real_environment_outranks_dotenv(tmp_path: Path, monkeypatch: pytest.Mo
 
 def test_dotenv_absent_is_not_an_error(tmp_path: Path) -> None:
     load_dotenv(tmp_path / "nope.env")
+
+
+def test_overlays_compose_in_order(tmp_path: Path) -> None:
+    """A cell built from a retrieval overlay and a defence overlay must carry both,
+    with the later file winning where they overlap."""
+    first = tmp_path / "first.yaml"
+    first.write_text(
+        yaml.safe_dump({"retrieval": {"top_k": 7, "overfetch": 2}, "defenses": ["source_cap"]}),
+        encoding="utf-8",
+    )
+    second = tmp_path / "second.yaml"
+    second.write_text(yaml.safe_dump({"retrieval": {"overfetch": 3}}), encoding="utf-8")
+
+    config = load_config(BASE, [first, second])
+
+    assert config.retrieval.top_k == 7
+    assert config.retrieval.overfetch == 3
+    assert config.defenses == ["source_cap"]

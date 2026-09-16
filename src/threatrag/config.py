@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import copy
 import os
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Literal, Self
 
@@ -288,14 +289,23 @@ def _apply_env_overrides(raw: dict[str, Any]) -> dict[str, Any]:
     return raw
 
 
-def load_config(path: str | Path | None = None, overlay: str | Path | None = None) -> Config:
-    """Load ``base.yaml`` (or ``path``), optionally deep-merging an experiment overlay."""
+def load_config(
+    path: str | Path | None = None,
+    overlay: str | Path | Sequence[str | Path] | None = None,
+) -> Config:
+    """Load ``base.yaml`` (or ``path``), deep-merging experiment overlays in order.
+
+    Several overlays compose a cell from committed parts -- a retrieval mode and
+    a defence set -- so no file has to restate another's contents and drift from
+    it. A later overlay wins where two set the same key.
+    """
     load_dotenv()
     base_path = Path(path or os.getenv("THREATRAG_CONFIG") or DEFAULT_CONFIG)
     if not base_path.exists():
         raise FileNotFoundError(f"Config not found: {base_path}")
 
     raw = _read_yaml(base_path)
-    if overlay is not None:
-        raw = _deep_merge(raw, _read_yaml(Path(overlay)))
+    overlays = [overlay] if isinstance(overlay, str | Path) else list(overlay or [])
+    for item in overlays:
+        raw = _deep_merge(raw, _read_yaml(Path(item)))
     return Config.model_validate(_apply_env_overrides(raw))
