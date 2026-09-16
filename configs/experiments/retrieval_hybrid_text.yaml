@@ -1,0 +1,11 @@
+# Hybrid retrieval over chunk text only, the same input MiniLM embeds, so any
+# difference from the dense control is the lexical ranking and not extra
+# information. See retrieval_hybrid.yaml for the deployable variant.
+vector_store:
+  collection: threatrag_hybrid_text
+retrieval:
+  mode: hybrid
+  bm25:
+    # Mean BM25 tokens per chunk body in the 40815-chunk corpus, measured.
+    avg_len: 38.9
+    include_title: false

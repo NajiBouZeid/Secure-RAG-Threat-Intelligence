@@ -25,6 +25,7 @@ from threatrag.index.embedders.mean_pooled import MeanPooledEncoderEmbedder
 from threatrag.index.embedders.sentence_transformer import SentenceTransformerEmbedder
 from threatrag.index.qdrant_store import QdrantVectorStore
 from threatrag.index.segregated_store import SegregatedStore
+from threatrag.index.sparse.bm25 import Bm25Encoder
 from threatrag.ingest.chunking import build_chunker
 from threatrag.ingest.pipeline import IngestPipeline
 from threatrag.ingest.sources.attack_cti import AttackCtiSource
@@ -89,7 +90,7 @@ def build_store(config: Config) -> VectorStore:
     if backend != "qdrant":
         raise ValueError(f"Unsupported vector store backend {backend!r}")
     spec = config.vector_store
-    public = QdrantVectorStore(spec.url, spec.collection)
+    public = build_qdrant_store(config, spec.collection)
     # D5 has no request-time hook -- it decides where a chunk is written, and by
     # the time any hook runs that is already settled. It is toggled from the
     # same defences list as the rest so a benchmark cell has one place to look.
@@ -99,6 +100,25 @@ def build_store(config: Config) -> VectorStore:
         public,
         QdrantVectorStore(spec.url, spec.restricted_collection),
         restrict_above=spec.restrict_above,
+    )
+
+
+def build_qdrant_store(config: Config, collection: str) -> QdrantVectorStore:
+    """One collection, hybrid when the config says so.
+
+    Hybrid and segregation are never built together; the config refuses that
+    combination, so the restricted collection is always dense.
+    """
+    retrieval = config.retrieval
+    if retrieval.mode != "hybrid":
+        return QdrantVectorStore(config.vector_store.url, collection)
+    bm25 = retrieval.bm25
+    return QdrantVectorStore(
+        config.vector_store.url,
+        collection,
+        sparse=Bm25Encoder(k1=bm25.k1, b=bm25.b, avg_len=bm25.avg_len),
+        sparse_title=bm25.include_title,
+        prefetch=retrieval.hybrid_prefetch,
     )
 
 

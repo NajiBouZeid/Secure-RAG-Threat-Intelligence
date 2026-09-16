@@ -11,6 +11,12 @@ MiniLM, and comparing them is only meaningful over identical chunk sets.
 *Server-side payload filtering* lets access control run inside the query. A
 post-hoc filter would still be wrong: a restricted chunk that displaces a
 permitted one changes the top-k the user receives even after it is dropped.
+
+*Sparse vectors with server-side fusion* make hybrid retrieval one query. With a
+sparse encoder attached, every point also carries BM25 term weights, and a
+search runs the dense and the lexical ranking as two prefetches and fuses them
+by reciprocal rank inside Qdrant. The access filter goes on each prefetch, not
+on the fused result, for the same reason it goes inside the query at all.
 """
 
 from __future__ import annotations
@@ -25,6 +31,11 @@ from qdrant_client.http import models as qm
 
 from threatrag.domain.models import TLP, Chunk, Principal, RetrievedChunk, SourceType, TrustTier
 from threatrag.domain.types import Matrix, Vector
+from threatrag.index.sparse.bm25 import Bm25Encoder
+
+#: The sparse vector's name. Not an embedding model, so it lives beside the
+#: named dense vectors rather than in the embedding config.
+SPARSE_VECTOR = "bm25"
 
 # Payload keys that carry security semantics; indexed so filtering stays cheap.
 _TLP_KEY = "tlp"
@@ -43,9 +54,30 @@ def _point_id(chunk_id: str) -> str:
 class QdrantVectorStore:
     """Vector store adapter implementing the ``VectorStore`` protocol."""
 
-    def __init__(self, url: str, collection: str, *, timeout: int = 60) -> None:
+    def __init__(
+        self,
+        url: str,
+        collection: str,
+        *,
+        timeout: int = 60,
+        sparse: Bm25Encoder | None = None,
+        sparse_title: bool = False,
+        prefetch: int = 50,
+    ) -> None:
         self._client = QdrantClient(url=url, timeout=timeout)
         self._collection = collection
+        # With an encoder, writes carry BM25 weights and searches are hybrid.
+        # Without one this adapter behaves exactly as it did before hybrid
+        # existed, which is what keeps the dense collection a valid control.
+        self._sparse = sparse
+        self._sparse_title = sparse_title
+        # Candidates each ranking contributes to the fusion. Fixed, not tuned:
+        # RRF is rank-based precisely so there is nothing to fit to the gold set.
+        self._prefetch = prefetch
+
+    @property
+    def hybrid(self) -> bool:
+        return self._sparse is not None
 
     @property
     def collection(self) -> str:
@@ -67,8 +99,16 @@ class QdrantVectorStore:
             for name, dim in vectors.items()
         }
 
+        sparse_config = (
+            {SPARSE_VECTOR: qm.SparseVectorParams(modifier=qm.Modifier.IDF)}
+            if self._sparse is not None
+            else None
+        )
+
         if not self._client.collection_exists(self._collection):
-            self._client.create_collection(self._collection, vectors_config=config)
+            self._client.create_collection(
+                self._collection, vectors_config=config, sparse_vectors_config=sparse_config
+            )
         else:
             existing = self._client.get_collection(self._collection).config.params.vectors
             configured = set(existing) if isinstance(existing, dict) else set()
@@ -79,6 +119,17 @@ class QdrantVectorStore:
                     f"{missing}, and Qdrant cannot add them in place. Either use a "
                     f"different vector_store.collection or drop and re-ingest."
                 )
+            if self._sparse is not None:
+                params = self._client.get_collection(self._collection).config.params
+                if SPARSE_VECTOR not in (params.sparse_vectors or {}):
+                    # Writing sparse weights to a dense-only collection fails;
+                    # searching one would fuse against an empty ranking and
+                    # quietly return the dense result under a hybrid label.
+                    raise RuntimeError(
+                        f"Collection {self._collection!r} has no {SPARSE_VECTOR!r} sparse "
+                        f"vector, so it cannot serve hybrid retrieval. Build a hybrid "
+                        f"collection with `threatrag build-hybrid`."
+                    )
 
         for field in _KEYWORD_INDEXES:
             self._client.create_payload_index(
@@ -109,7 +160,7 @@ class QdrantVectorStore:
         points = [
             qm.PointStruct(
                 id=_point_id(chunk.id),
-                vector={vector_name: vector.tolist()},
+                vector={vector_name: vector.tolist(), **self._sparse_part(chunk.title, chunk.text)},
                 payload=self._payload(chunk),
             )
             for chunk, vector in zip(chunks, vectors, strict=True)
@@ -153,6 +204,50 @@ class QdrantVectorStore:
             return 0
         self._client.update_vectors(self._collection, points=points, wait=True)
         return len(points)
+
+    def copy_from(self, source: QdrantVectorStore, *, batch_size: int = 256) -> int:
+        """Fill this collection from ``source``, adding BM25 weights to every point.
+
+        The dense vectors are copied, not re-embedded. That makes the dense half
+        of a hybrid collection bit-identical to the dense control, so a
+        difference between the two is the lexical ranking and nothing else --
+        a re-embed could move a vector in the last decimal and put that into
+        the comparison too. Point ids and payloads are copied unchanged.
+        """
+        if self._sparse is None:
+            raise RuntimeError("copy_from builds a hybrid collection; this store has no encoder")
+
+        copied = 0
+        offset: Any = None
+        while True:
+            records, offset = source._client.scroll(
+                source.collection,
+                limit=batch_size,
+                offset=offset,
+                with_payload=True,
+                with_vectors=True,
+            )
+            points = []
+            for record in records:
+                payload = record.payload or {}
+                dense = record.vector if isinstance(record.vector, dict) else {}
+                points.append(
+                    qm.PointStruct(
+                        id=record.id,
+                        vector={
+                            **dense,
+                            **self._sparse_part(
+                                str(payload.get("title", "")), str(payload.get("text", ""))
+                            ),
+                        },
+                        payload=payload,
+                    )
+                )
+            if points:
+                self._client.upsert(self._collection, points=points, wait=True)
+                copied += len(points)
+            if offset is None:
+                return copied
 
     def scroll_chunks(
         self, *, source_type: str | None = None, batch_size: int = 256
@@ -215,6 +310,11 @@ class QdrantVectorStore:
     ) -> list[RetrievedChunk]:
         # Built explicitly rather than via .tolist(): numpy's stub returns a
         # nested-list union that the client signature does not accept.
+        if self._sparse is not None:
+            # The store is handed a vector, not the question, and the lexical
+            # half needs the text. Answering dense-only here would return a
+            # dense result from a store configured as hybrid, with no sign.
+            raise RuntimeError("a hybrid store needs the question text; call search_hybrid")
         query: list[float] = [float(value) for value in query_vector]
         response = self._client.query_points(
             self._collection,
@@ -224,9 +324,59 @@ class QdrantVectorStore:
             query_filter=self._access_filter(principal),
             with_payload=True,
         )
+        return self._hits(response.points)
+
+    def search_hybrid(
+        self,
+        vector_name: str,
+        query_vector: Vector,
+        question: str,
+        k: int,
+        principal: Principal | None = None,
+    ) -> list[RetrievedChunk]:
+        """Dense and BM25 rankings fused by reciprocal rank, server-side.
+
+        The returned score is the RRF score, which orders results but is not a
+        similarity: a score threshold, or a merge by score across collections,
+        means nothing on it, and the config refuses both.
+        """
+        if self._sparse is None:
+            raise RuntimeError("search_hybrid needs a sparse encoder; this store is dense-only")
+        access = self._access_filter(principal)
+        depth = max(k, self._prefetch)
+        prefetch = [
+            qm.Prefetch(
+                query=[float(value) for value in query_vector],
+                using=vector_name,
+                limit=depth,
+                filter=access,
+            )
+        ]
+        lexical = self._sparse.encode_query(question)
+        # A question made only of stopwords has no lexical ranking to offer,
+        # and Qdrant rejects an empty sparse query.
+        if lexical.indices:
+            prefetch.append(
+                qm.Prefetch(
+                    query=qm.SparseVector(indices=lexical.indices, values=lexical.values),
+                    using=SPARSE_VECTOR,
+                    limit=depth,
+                    filter=access,
+                )
+            )
+        response = self._client.query_points(
+            self._collection,
+            prefetch=prefetch,
+            query=qm.FusionQuery(fusion=qm.Fusion.RRF),
+            limit=k,
+            with_payload=True,
+        )
+        return self._hits(response.points)
+
+    def _hits(self, points: Sequence[Any]) -> list[RetrievedChunk]:
         return [
             RetrievedChunk(chunk=self._to_chunk(point.payload or {}), score=float(point.score))
-            for point in response.points
+            for point in points
         ]
 
     def count(self) -> int:
@@ -276,6 +426,13 @@ class QdrantVectorStore:
     def drop(self) -> None:
         if self._client.collection_exists(self._collection):
             self._client.delete_collection(self._collection)
+
+    def _sparse_part(self, title: str, text: str) -> dict[str, qm.SparseVector]:
+        if self._sparse is None:
+            return {}
+        body = f"{title}\n{text}" if self._sparse_title else text
+        encoded = self._sparse.encode_document(body)
+        return {SPARSE_VECTOR: qm.SparseVector(indices=encoded.indices, values=encoded.values)}
 
     @staticmethod
     def _access_filter(principal: Principal | None) -> qm.Filter | None:

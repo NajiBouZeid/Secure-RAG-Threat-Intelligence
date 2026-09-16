@@ -11,10 +11,10 @@ from __future__ import annotations
 import copy
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, Self
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from threatrag.domain.models import TLP, TrustTier
 
@@ -83,6 +83,22 @@ class VectorStoreConfig(BaseModel):
     restrict_above: TLP = TLP.GREEN
 
 
+class Bm25Config(BaseModel):
+    """The lexical half of hybrid retrieval. Written into the index at build time,
+    so changing any of these means rebuilding the hybrid collection."""
+
+    k1: float = 1.2
+    b: float = 0.75
+    # Mean tokens per indexed passage under the BM25 tokenizer. Fixed rather
+    # than recomputed per write, so a document indexed later is weighted on the
+    # same scale as the corpus it joins.
+    avg_len: float = 100.0
+    # Whether the chunk title is indexed with its text. Titles carry the
+    # document's identifier ("T1127.003 JamPlus"); most chunk bodies after the
+    # first do not.
+    include_title: bool = False
+
+
 class RetrievalConfig(BaseModel):
     top_k: int = 5
     score_threshold: float | None = None
@@ -90,6 +106,13 @@ class RetrievalConfig(BaseModel):
     # over that, and the result is cut to top_k. 1 reproduces every pre-M6
     # number exactly; a retrieval-hook defence needs headroom to promote from.
     overfetch: int = 1
+    # dense: MiniLM alone, every number before hybrid. hybrid: MiniLM and BM25
+    # fused by reciprocal rank, which needs a collection built with sparse
+    # vectors (`threatrag build-hybrid`).
+    mode: Literal["dense", "hybrid"] = "dense"
+    # Candidates each ranking contributes to the fusion. Not tuned on the gold set.
+    hybrid_prefetch: int = 50
+    bm25: Bm25Config = Field(default_factory=Bm25Config)
 
 
 class GenerationConfig(BaseModel):
@@ -207,6 +230,32 @@ class Config(BaseModel):
     sources: dict[str, dict[str, Any]] = Field(default_factory=dict)
     defenses: list[str] = Field(default_factory=list)
     defense_settings: DefenseSettings = Field(default_factory=DefenseSettings)
+
+    @model_validator(mode="after")
+    def _hybrid_scores_are_ranks(self) -> Self:
+        """Refuse the two configurations that would read an RRF score as a similarity.
+
+        A fused score says where a passage ranked, not how close it is.
+        ``corpus_segregation`` merges its two collections by score, which is
+        exact for cosine similarity and meaningless for RRF: the merged top-k
+        would quietly differ from a single-collection search, and M6's result
+        that segregation leaves retrieval unchanged would stop being true
+        without anything reporting it. A score threshold fails the same way.
+        """
+        if self.retrieval.mode != "hybrid":
+            return self
+        if "corpus_segregation" in self.defenses:
+            raise ValueError(
+                "retrieval.mode=hybrid cannot be combined with corpus_segregation: the "
+                "segregated store merges collections by score, and a fused RRF score is a "
+                "rank, not a similarity"
+            )
+        if self.retrieval.score_threshold is not None:
+            raise ValueError(
+                "retrieval.score_threshold has no meaning under retrieval.mode=hybrid: the "
+                "fused score is a rank, not a similarity"
+            )
+        return self
 
 
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:

@@ -118,6 +118,30 @@ class VectorStore(Protocol):
 
 
 @runtime_checkable
+class HybridSearch(Protocol):
+    """A store that can fuse a dense ranking with a lexical one.
+
+    Separate from ``VectorStore`` rather than a new argument to ``search``: a
+    lexical ranking needs the question text, which no other store wants, and
+    widening the port would put a parameter on every adapter that only one of
+    them reads. ``hybrid`` is False on a store that has the method but no
+    lexical index, so the retriever asks the store rather than its type.
+    """
+
+    @property
+    def hybrid(self) -> bool: ...
+
+    def search_hybrid(
+        self,
+        vector_name: str,
+        query_vector: Vector,
+        question: str,
+        k: int,
+        principal: Principal | None = None,
+    ) -> list[RetrievedChunk]: ...
+
+
+@runtime_checkable
 class Generator(Protocol):
     """LLM completion backend."""
 

@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from threatrag.domain.models import Principal, RetrievedChunk
-from threatrag.domain.ports import Defense, Embedder, VectorStore
+from threatrag.domain.ports import Defense, Embedder, HybridSearch, VectorStore
 
 
 class Retriever:
@@ -52,9 +52,15 @@ class Retriever:
         # duplicate leaves a hole rather than promoting the next document. The
         # default of 1 fetches exactly as before, so every pre-M6 number stands.
         query_vector = self._embedder.embed_query(question)
-        results = self._store.search(
-            self._embedder.name, query_vector, wanted * self._overfetch, principal=principal
-        )
+        depth = wanted * self._overfetch
+        if isinstance(self._store, HybridSearch) and self._store.hybrid:
+            results = self._store.search_hybrid(
+                self._embedder.name, query_vector, question, depth, principal=principal
+            )
+        else:
+            results = self._store.search(
+                self._embedder.name, query_vector, depth, principal=principal
+            )
 
         if self._score_threshold is not None:
             results = [hit for hit in results if hit.score >= self._score_threshold]

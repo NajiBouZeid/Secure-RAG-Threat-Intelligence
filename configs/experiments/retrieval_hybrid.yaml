@@ -1,0 +1,16 @@
+# Hybrid retrieval: MiniLM and BM25 fused by reciprocal rank, over a copy of the
+# dense collection. Build with `threatrag build-hybrid --overlay <this file>`;
+# `threatrag` itself stays untouched as the dense control.
+#
+# The title is indexed with the text. 93% of chunks carry their document's
+# identifier in the title and only 35% in the body, so this is the variant a
+# deployment would run. retrieval_hybrid_text.yaml indexes the body alone, which
+# isolates the retriever: BM25 then sees exactly what MiniLM sees.
+vector_store:
+  collection: threatrag_hybrid
+retrieval:
+  mode: hybrid
+  bm25:
+    # Mean BM25 tokens per passage in the 40815-chunk corpus, measured.
+    avg_len: 42.5
+    include_title: true
