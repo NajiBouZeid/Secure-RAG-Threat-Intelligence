@@ -481,10 +481,29 @@ Evidence, weaker attacker: `reports/data/m7_reidentify_public.json`,
   questions with four undefended repeats, every set stays within what
   re-running the undefended cell produces. The M7 suspicion about `source_cap`
   on 1.5b was not confirmed (follow-up, 2026-09-16); 7b `source_cap` leans
-  lower without clearing zero.
+  lower without clearing zero. **This verdict is now suspect in one specific
+  way.** The spread that swallows every defence effect is the spread between
+  undefended repeats, and that spread was measured under the unwarmed protocol
+  which rewrites 28% of answers between identical runs. A warmed re-run would
+  have a far narrower baseline, so a defence cost that is real and small could
+  be sitting under this negative result. The finding as published stands; what
+  is not established is whether it survives a protocol that can see smaller
+  effects. Re-running the sweep warmed is the outstanding work.
 * **Answers at temperature 0 are not reproducible on this setup.** Identical
-  undefended runs in one session rewrote up to 72 of 200 answers. The cause is
-  not established.
+  undefended runs in one session rewrote up to 72 of 200 answers.
+  **Cause established 2026-09-17, and it is the protocol, not the model.** A
+  first generation's arithmetic depends on the cache left by whatever prompt
+  preceded it; replaying a prompt gives a different answer the first time and
+  the same answer on every replay after it. A sweep asks each question once, so
+  every answer it records is a first generation. Re-measured on two identical
+  undefended cells under one verified, fully-GPU-resident load: **57 of 200
+  answers differ when each question is generated once, and 1 of 200 when each
+  is generated twice and the second kept** (`--warm`), with on-target flips
+  going from 2 to 0. Two earlier suspects were ruled out on the way: the model
+  never reloaded between those cells, and no layers were on the CPU.
+  **Every utility number in this report was measured under the unwarmed
+  protocol**, so its run-to-run noise is real and none of it is restated here.
+  Evidence: `reports/data/repro_check.jsonl` and `repro_check_warm.jsonl`.
 * **Why 1.5b out-scores 7b is only partly explained.** Verbosity was tested
   and rejected. 7b's soft refusals account for part of the gap, but on the
   answers that are not soft refusals it still hits 0.21 against 0.30.
