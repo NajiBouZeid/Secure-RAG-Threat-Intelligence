@@ -302,6 +302,12 @@ segregated topology.
   was never cited. That became **D6**, which blocks the attack, and the cost of
   which is a threshold rather than a constant — 0% refusals on this corpus, 33%
   one tier down.
+
+  D6 reads the answer's citations, so it inherits the model's willingness to
+  cite: M7 found it absent rather than weak on `qwen2.5:1.5b`. Since
+  2026-09-17 it reports that it could not judge instead of passing silently,
+  measured at 6 of 7 attacks unevaluated on 1.5b against 1 of 7 on 7b. See
+  `reports/m7_benchmark.md`.
 * **D4's 5-of-7 is not a floor, and now there is a measurement saying so.**
   `poi-001e` deletes one sentence, keeps the attack intact, and defeats the
   screen and every other request-time defence. M7 should treat D4's number as
