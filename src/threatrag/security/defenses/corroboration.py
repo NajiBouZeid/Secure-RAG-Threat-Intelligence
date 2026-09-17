@@ -65,7 +65,27 @@ class CorroborationRequirement(BaseDefense):
         return ref == cited.chunk.source_ref or ref in cited.chunk.text
 
     def on_answer(self, answer: Answer) -> Answer:
-        if not answer.citations or answer.blocked:
+        if answer.blocked:
+            return answer
+
+        if not answer.citations:
+            # The rule reads citations, so an answer with none leaves it
+            # nothing to inspect. Passing silently is how M7's full defence set
+            # reported 0 violations on qwen2.5:1.5b while the attack landed:
+            # the model rarely cites, so D6 never ran and nothing said so.
+            #
+            # Refusing instead would be worse, and is the trap this defence was
+            # designed around. Every document in ``attacks/`` is UNTRUSTED, so
+            # "refuse when low-trust material was retrieved and not cited"
+            # blocks the attack corpus and almost nothing else -- a defence
+            # that measures our own labelling. Without citations there is no
+            # evidence the answer relied on the poison at all, and it may well
+            # have ignored it. So this records that it could not judge, and
+            # leaves judging to something that can.
+            if any(self._needs_support(hit) for hit in answer.retrieved):
+                return answer.model_copy(
+                    update={"defenses_abstained": [*answer.defenses_abstained, self.name]}
+                )
             return answer
 
         cited = [hit for hit in answer.retrieved if hit.chunk.citation in answer.citations]

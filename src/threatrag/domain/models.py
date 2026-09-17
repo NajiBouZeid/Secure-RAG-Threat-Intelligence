@@ -137,5 +137,12 @@ class Answer(BaseModel):
     stripped_urls: list[str] = Field(default_factory=list)
     model: str = ""
     defenses_applied: list[str] = Field(default_factory=list)
+    # Defences that were enabled, ran, and could not evaluate this answer at
+    # all. D6 decides by reading the answer's citations, so a model that does
+    # not cite leaves it nothing to inspect. M7 read that as a defence being
+    # weaker on qwen2.5:1.5b; it was absent, and the configuration said
+    # nothing. An unevaluated answer and a cleared one are different outcomes
+    # and must not both be reported as a pass.
+    defenses_abstained: list[str] = Field(default_factory=list)
     blocked: bool = False
     block_reason: str | None = None

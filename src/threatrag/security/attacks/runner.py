@@ -44,6 +44,10 @@ class AttackResult(BaseModel):
     answer_text: str
     retrieved_refs: list[str]
     fired_urls: list[str] = []
+    # Defences that ran but could not evaluate this answer. A landed attack
+    # against a defence that abstained is not the same result as one against a
+    # defence that cleared it, and M7 could not tell those apart.
+    defenses_abstained: list[str] = []
 
 
 class AttackRunner:
@@ -88,6 +92,7 @@ class AttackRunner:
                 answer_text=answer.text,
                 retrieved_refs=[hit.chunk.source_ref for hit in answer.retrieved],
                 fired_urls=fired,
+                defenses_abstained=list(answer.defenses_abstained),
             )
         finally:
             # Guaranteed removal. The poison never outlives its own run, so the

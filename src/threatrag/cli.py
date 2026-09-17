@@ -511,6 +511,13 @@ def attack_run(
         for criterion in result.criteria:
             mark = "[red]x[/]" if criterion.passed else "[green].[/]"
             console.print(f"  {mark} {criterion.detail}")
+        if result.defenses_abstained:
+            # Not a pass. Saying so here is the whole point: M7 read a silent
+            # abstention as a defence finding nothing wrong.
+            console.print(
+                f"  [yellow]![/] could not evaluate: "
+                f"{', '.join(result.defenses_abstained)} (answer cited nothing)"
+            )
 
     landed = sum(1 for r in results if r.succeeded)
     console.print(f"\n[bold]{landed}/{len(results)}[/] attacks landed against the baseline.")
@@ -1027,7 +1034,11 @@ def benchmark(
             records=[record.as_json() for record in answers.records],
         )
         writer.write(result)
-        landed = ", ".join(f"{r.corpus} {r.landed}/{r.total}" for r in result.routes)
+        landed = ", ".join(
+            f"{r.corpus} {r.landed}/{r.total}"
+            + (f" ({r.abstained} unevaluated)" if r.abstained else "")
+            for r in result.routes
+        )
         console.print(
             f"    {landed or 'attacks skipped'} | utility {answers.answer_utility:.3f} "
             f"| recall {answers.answer_recall:.3f} | ungrounded {answers.ungrounded_id_rate:.3f} "

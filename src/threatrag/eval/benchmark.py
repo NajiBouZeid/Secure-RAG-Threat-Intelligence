@@ -66,6 +66,10 @@ class RouteResult:
     landed: int
     total: int
     survivors: list[str] = field(default_factory=list)
+    # Attacks where a defence ran but could not reach a verdict. A 0/7 built
+    # from abstentions is not the same result as a 0/7 built from refusals,
+    # and M7's table could not show the difference.
+    abstained: int = 0
 
     @property
     def success_rate(self) -> float:
@@ -144,6 +148,7 @@ def summarise_route(corpus: str, results: Sequence[AttackResult]) -> RouteResult
         landed=sum(1 for r in results if r.succeeded),
         total=len(results),
         survivors=[r.attack_id for r in results if r.succeeded],
+        abstained=sum(1 for r in results if r.defenses_abstained),
     )
 
 

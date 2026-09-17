@@ -145,3 +145,38 @@ def test_the_threshold_decides_whether_vendor_material_is_policed() -> None:
 
     assert not CorroborationRequirement().on_answer(answer).blocked
     assert CorroborationRequirement(TrustTier.VENDOR).on_answer(answer).blocked
+
+
+def test_it_says_so_when_the_answer_cites_nothing() -> None:
+    """The M7 failure: qwen2.5:1.5b rarely cites, so the rule had nothing to
+    read and passed silently, and the full defence set reported 0 violations
+    while the attack landed. Absence of a verdict is not a verdict.
+    """
+    uncited = _answer([POISON, REAL], [])
+
+    result = CorroborationRequirement().on_answer(uncited)
+
+    assert not result.blocked
+    assert result.defenses_abstained == ["corroboration"]
+
+
+def test_it_does_not_abstain_when_there_was_nothing_to_corroborate() -> None:
+    """An answer over wholly authoritative material needs no corroboration, so
+    passing it is a real verdict rather than an abstention. Recording those as
+    abstentions too would drown the signal that matters.
+    """
+    result = CorroborationRequirement().on_answer(_answer([REAL], []))
+
+    assert result.defenses_abstained == []
+
+
+def test_abstaining_does_not_refuse_the_answer() -> None:
+    """Failing closed here is the free-100% trap: every document in attacks/ is
+    UNTRUSTED, so refusing whenever uncited low-trust material was retrieved
+    would block the attack corpus and almost nothing else, while the answer may
+    have ignored the poison entirely.
+    """
+    result = CorroborationRequirement().on_answer(_answer([POISON, REAL], []))
+
+    assert result.text == "MITRE recommends disabling EDR [1]."
+    assert result.block_reason is None

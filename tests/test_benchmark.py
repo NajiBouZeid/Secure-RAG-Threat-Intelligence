@@ -33,9 +33,12 @@ MODELS = ["qwen2.5:7b", "qwen2.5:1.5b"]
 
 
 class FakeResult:
-    def __init__(self, attack_id: str, succeeded: bool) -> None:
+    def __init__(
+        self, attack_id: str, succeeded: bool, defenses_abstained: list[str] | None = None
+    ) -> None:
         self.attack_id = attack_id
         self.succeeded = succeeded
+        self.defenses_abstained = defenses_abstained or []
 
 
 def test_per_question_records_survive_the_json_round_trip(tmp_path: Path) -> None:
@@ -211,3 +214,19 @@ def test_one_finished_repeat_does_not_skip_the_others(tmp_path: Path) -> None:
     assert "none@qwen2.5:7b#2" not in remaining
     assert "none@qwen2.5:7b#1" in remaining
     assert "none@qwen2.5:7b#3" in remaining
+
+
+def test_a_route_counts_attacks_no_defence_could_judge() -> None:
+    """A 0/7 built from abstentions is not the same result as a 0/7 built from
+    refusals. M7's table could not show the difference, and read a defence that
+    never ran on qwen2.5:1.5b as one that found nothing wrong."""
+    route = summarise_route(
+        "m4",
+        [
+            FakeResult("inj-003", True, ["corroboration"]),  # type: ignore[list-item]
+            FakeResult("poi-001", False, ["corroboration"]),  # type: ignore[list-item]
+            FakeResult("exf-002", False),  # type: ignore[list-item]
+        ],
+    )
+
+    assert route.abstained == 2
