@@ -912,6 +912,14 @@ def benchmark(
             "rows carry no attack routes.",
         ),
     ] = False,
+    warm: Annotated[
+        bool,
+        typer.Option(
+            "--warm",
+            help="Generate each question twice and keep the second answer. Costs about "
+            "75% more time; rows are not comparable with unwarmed ones.",
+        ),
+    ] = False,
 ) -> None:
     """Sweep defence sets x models over both attack corpora and the utility axes.
 
@@ -989,6 +997,13 @@ def benchmark(
         pipeline = factory.build_answer_pipeline(cfg)
 
         def ask(question: str, who: Principal | None, p: AnswerPipeline = pipeline) -> Answer:
+            # A first generation's arithmetic depends on whatever prompt
+            # preceded it; a second one's cache holds this prompt's own prefix
+            # and no longer does. Measured 2026-09-17: two identical repeats
+            # differ on 57 of 200 answers generated once each, and on 1 of 200
+            # when each is generated twice and the second kept.
+            if warm:
+                p.answer(question, principal=who)
             return p.answer(question, principal=who)
 
         answers = answer_gold_questions(
@@ -1008,6 +1023,7 @@ def benchmark(
             retrieval=retrieval_cache[cell.label],
             seconds=timed(started),
             load=load,
+            warm=warm,
             records=[record.as_json() for record in answers.records],
         )
         writer.write(result)

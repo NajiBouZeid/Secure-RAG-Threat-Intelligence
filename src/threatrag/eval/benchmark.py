@@ -86,6 +86,11 @@ class CellResult:
     # cells produced under different loads are not strictly comparable, and
     # without this the row gives no way to tell afterwards.
     load: dict[str, object] | None = None
+    # Whether each question was generated twice with the second answer kept.
+    # A warmed row and an unwarmed one are different measurements, so the
+    # protocol travels with the number rather than with the command that
+    # happened to produce it.
+    warm: bool = False
     # One entry per gold question, answer text included. M7 kept only the
     # aggregates, so a stronger metric could not be scored from its runs and
     # had to be paid for with new ones; keeping the answers is what prevents
