@@ -40,6 +40,7 @@ from threatrag.eval.metrics import aggregate, score_query
 from threatrag.index.qdrant_store import QdrantVectorStore
 from threatrag.ingest.pipeline import IngestStats
 from threatrag.ingest.sources.nvd_api import NVD_ATTRIBUTION
+from threatrag.rag.generators.ollama import OllamaGenerator
 from threatrag.rag.pipeline import NO_EVIDENCE, AnswerPipeline
 from threatrag.rag.retriever import Retriever
 from threatrag.security.attacks.loader import DEFAULT_ATTACK_DIR, load_attacks
@@ -830,6 +831,52 @@ SWEEP_SETS: tuple[tuple[str, Path | None], ...] = (
 SWEEP_OUT = Path("reports/data/m7_sweep.jsonl")
 
 
+def check_model_load(
+    config: Config, model: str, seen: dict[str, dict[str, object]]
+) -> dict[str, object] | None:
+    """Warm the model, then report and police how it is resident.
+
+    Two conditions change answers and are worth shouting about: layers on the
+    CPU, which changes the arithmetic outright, and a changed residency
+    mid-sweep, which means the model was unloaded and rebuilt between cells.
+    Neither aborts the run -- the row records what happened, and a warning
+    beats discarding hours of generation.
+
+    Passing this check does not make a cell reproducible. Two repeats under a
+    verified-identical load still differed on 57 of 200 answers. It rules out
+    two explanations; it does not supply one.
+    """
+    probe = factory.build_generator(config)
+    if not isinstance(probe, OllamaGenerator):
+        return None
+    try:
+        probe.generate("You are a probe.", "Reply with the single word ok.")
+        state = probe.load_state()
+    finally:
+        probe.close()
+    if state is None:
+        console.print("    [yellow]warning[/] model is not resident; cannot verify its load")
+        return None
+
+    if not state.get("fully_on_gpu"):
+        console.print(
+            f"    [red]warning[/] {model} is not fully on the GPU "
+            f"(size_vram {state.get('size_vram')} of {state.get('size')}); "
+            f"CPU layers change the arithmetic and these cells are not comparable"
+        )
+    previous = seen.get(model)
+    if previous is None:
+        seen[model] = state
+    elif previous != state:
+        console.print(
+            f"    [red]warning[/] {model} was reloaded mid-sweep "
+            f"({previous.get('size_vram')} -> {state.get('size_vram')}); "
+            f"cells either side of this point are not strictly comparable"
+        )
+        seen[model] = state
+    return state
+
+
 @app.command()
 def benchmark(
     config: ConfigOption = None,
@@ -903,11 +950,13 @@ def benchmark(
     # set. Scoring it per cell would double the cost and invent a difference
     # between two identical numbers.
     retrieval_cache: dict[str, dict[str, float | int]] = {}
+    model_loads: dict[str, dict[str, object]] = {}
 
     for index, cell in enumerate(pending, start=1):
         started = time.perf_counter()
         cfg = cell_config(cell, config_path=config, load=load_config)
         console.print(f"[bold]{index}/{len(pending)}[/] {cell.key}  defenses={cfg.defenses}")
+        load = check_model_load(cfg, cell.model, model_loads)
 
         if cell.label not in retrieval_cache:
             retriever = factory.build_retriever(cfg)
@@ -958,6 +1007,7 @@ def benchmark(
             answers=answers.as_row(),
             retrieval=retrieval_cache[cell.label],
             seconds=timed(started),
+            load=load,
             records=[record.as_json() for record in answers.records],
         )
         writer.write(result)

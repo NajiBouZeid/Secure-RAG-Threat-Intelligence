@@ -82,6 +82,10 @@ class CellResult:
     answers: dict[str, float | int]
     retrieval: dict[str, float | int] | None
     seconds: float
+    # How the model was resident while this cell ran. Recorded because two
+    # cells produced under different loads are not strictly comparable, and
+    # without this the row gives no way to tell afterwards.
+    load: dict[str, object] | None = None
     # One entry per gold question, answer text included. M7 kept only the
     # aggregates, so a stronger metric could not be scored from its runs and
     # had to be paid for with new ones; keeping the answers is what prevents
@@ -176,11 +180,24 @@ def build_cells(
     models: Sequence[str],
     repeats: int = 1,
 ) -> list[Cell]:
-    """Every defence set under every model, repeated, defence set varying slowest.
+    """Every defence set under every model, repeated, model varying slowest.
 
-    Slowest on purpose: a partial sweep then covers every defence set for the
-    first model rather than half the defence sets for both, which is the half
-    that can still be read as a result.
+    Slowest on purpose, for two reasons. A partial sweep then covers every
+    defence set for the first model rather than half the defence sets for both,
+    which is the half that can still be read as a result. And it keeps one
+    model's cells contiguous, so the sweep loads each model once instead of
+    swapping them in and out of 8 GB of VRAM between neighbouring cells.
+
+    That second reason is not tidiness. Measured 2026-09-17: forcing part of
+    the model onto the CPU rewrote 6 of 20 otherwise identical answers, and a
+    reload did not reproduce the answers from before it. Interleaving the
+    models put a fresh load between almost every pair of cells on an 8 GB card,
+    so this ordering removes a known source of drift.
+
+    It does *not* explain the up-to-72-of-200 answer differences M7 recorded.
+    Two repeats run back to back under one verified-identical load still
+    differed on 57 of 200 questions, so that phenomenon has a different cause
+    and remains open.
 
     ``repeats`` exists because one attack in the corpus turned out not to be
     reproducible. exf-002 on qwen2.5:1.5b landed three times running, then was
@@ -192,8 +209,8 @@ def build_cells(
     """
     return [
         Cell(label=label, overlay=overlay, model=model, repeat=repeat)
-        for label, overlay in defence_sets
         for model in models
+        for label, overlay in defence_sets
         for repeat in range(1, repeats + 1)
     ]
 

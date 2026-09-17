@@ -60,6 +60,56 @@ def test_both_bounds_are_sent_together() -> None:
     assert options["temperature"] == 0.0
 
 
+def test_the_model_is_kept_resident_between_requests() -> None:
+    """Answers are stable for the lifetime of one model load and drift across
+    loads, so a sweep must not let the model expire between cells."""
+    recorder = Recorder()
+
+    _generator(recorder).generate("system", "user")
+
+    assert recorder.payload["keep_alive"] == "60m"
+
+
+class Residency:
+    """Answers /api/ps with a fixed residency report."""
+
+    def __init__(self, models: list[dict[str, Any]]) -> None:
+        self._models = models
+
+    def get(self, path: str) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={"models": self._models},
+            request=httpx.Request("GET", f"http://test{path}"),
+        )
+
+
+def _load_state(models: list[dict[str, Any]]) -> dict[str, Any] | None:
+    gen = OllamaGenerator("qwen2.5:1.5b")
+    gen._client = Residency(models)  # type: ignore[assignment]
+    return gen.load_state()
+
+
+def test_a_fully_offloaded_model_is_reported_as_such() -> None:
+    state = _load_state([{"model": "qwen2.5:1.5b", "size": 100, "size_vram": 100}])
+
+    assert state is not None
+    assert state["fully_on_gpu"] is True
+
+
+def test_cpu_layers_are_detected() -> None:
+    """The condition that quietly changes the arithmetic: measured 2026-09-17,
+    forcing a partial split rewrote 6 of 20 otherwise identical answers."""
+    state = _load_state([{"model": "qwen2.5:1.5b", "size": 100, "size_vram": 60}])
+
+    assert state is not None
+    assert state["fully_on_gpu"] is False
+
+
+def test_another_model_being_resident_is_not_this_one() -> None:
+    assert _load_state([{"model": "qwen2.5:7b", "size": 100, "size_vram": 100}]) is None
+
+
 def test_a_timeout_is_reported_as_a_generation_error() -> None:
     """It is what an unbounded runaway looks like from the caller's side, and
     it must name the backend rather than surface a bare httpx error."""

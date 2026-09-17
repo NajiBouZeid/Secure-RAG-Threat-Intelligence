@@ -132,6 +132,7 @@ def build_generator(config: Config) -> Generator:
         temperature=config.generation.temperature,
         num_ctx=config.generation.num_ctx,
         num_predict=config.generation.num_predict,
+        keep_alive=config.generation.keep_alive,
     )
 
 

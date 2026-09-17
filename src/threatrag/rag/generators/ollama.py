@@ -40,6 +40,7 @@ class OllamaGenerator:
         temperature: float = 0.0,
         num_ctx: int = 8192,
         num_predict: int = 1024,
+        keep_alive: str = "60m",
         timeout: float = 180.0,
         client: httpx.Client | None = None,
     ) -> None:
@@ -48,6 +49,7 @@ class OllamaGenerator:
         self._temperature = temperature
         self._num_ctx = num_ctx
         self._num_predict = num_predict
+        self._keep_alive = keep_alive
         self._timeout = timeout
         self._client = client
 
@@ -83,6 +85,7 @@ class OllamaGenerator:
                 {"role": "user", "content": user},
             ],
             "stream": False,
+            "keep_alive": self._keep_alive,
             "options": {
                 "temperature": self._temperature,
                 "num_ctx": self._num_ctx,
@@ -109,6 +112,35 @@ class OllamaGenerator:
         if not isinstance(content, str):
             raise GenerationError(f"Ollama returned no content: {message!r}")
         return content.strip()
+
+    def load_state(self) -> dict[str, object] | None:
+        """How this model is currently resident, or None if it is not loaded.
+
+        ``size_vram`` below ``size`` means layers are on the CPU, which changes
+        the arithmetic and therefore the answers: measured 2026-09-17, forcing a
+        partial split rewrote 6 of 20 answers that were otherwise identical. The
+        benchmark reads this to refuse a sweep whose cells would not be
+        comparable, rather than discovering it afterwards in the variance.
+        """
+        try:
+            response = self._http().get("/api/ps")
+            response.raise_for_status()
+            body = response.json()
+        except (httpx.HTTPError, ValueError):
+            return None
+        models = body.get("models") if isinstance(body, dict) else None
+        if not isinstance(models, list):
+            return None
+        for entry in models:
+            if isinstance(entry, dict) and entry.get("model") == self._model:
+                size, vram = entry.get("size"), entry.get("size_vram")
+                return {
+                    "size": size,
+                    "size_vram": vram,
+                    "fully_on_gpu": bool(size) and size == vram,
+                    "digest": entry.get("digest"),
+                }
+        return None
 
     def close(self) -> None:
         if self._client is not None:

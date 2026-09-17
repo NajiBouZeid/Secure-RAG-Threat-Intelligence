@@ -9,6 +9,7 @@ leak into the next.
 from __future__ import annotations
 
 import json
+from itertools import groupby
 from pathlib import Path
 
 from threatrag.config import Config
@@ -74,18 +75,33 @@ def _result(label: str, model: str, repeat: int = 1) -> CellResult:
     )
 
 
-def test_the_defence_set_varies_slowest() -> None:
+def test_the_model_varies_slowest() -> None:
     """A partial sweep should cover every defence set for one model, not half
-    the defence sets for both -- only the first is readable as a result."""
+    the defence sets for both -- only the first is readable as a result.
+
+    It also keeps one model's cells contiguous. Interleaving the models makes
+    the sweep swap them in and out of VRAM between neighbouring cells, and
+    answers drift across model loads even at temperature 0.
+    """
     cells = build_cells(DEFENCE_SETS, MODELS)
 
-    assert [c.key for c in cells[:4]] == [
+    assert [c.key for c in cells] == [
         "none@qwen2.5:7b#1",
-        "none@qwen2.5:1.5b#1",
         "injection_screen@qwen2.5:7b#1",
+        "all@qwen2.5:7b#1",
+        "none@qwen2.5:1.5b#1",
         "injection_screen@qwen2.5:1.5b#1",
+        "all@qwen2.5:1.5b#1",
     ]
-    assert len(cells) == 6
+
+
+def test_every_model_is_loaded_once_per_sweep() -> None:
+    """The point of the ordering: a model appears in one contiguous block, so
+    the sweep never returns to a model it has already finished with."""
+    cells = build_cells(DEFENCE_SETS, MODELS, repeats=3)
+
+    blocks = [model for model, _ in groupby(c.model for c in cells)]
+    assert blocks == list(MODELS)
 
 
 def test_a_cell_loads_its_own_overlay_rather_than_sharing_an_object() -> None:

@@ -130,6 +130,13 @@ class GenerationConfig(BaseModel):
     # least one benchmark cell. 1024 tokens is roughly 4000 characters, well
     # above any answer either model produces here.
     num_predict: int = 1024
+    # How long Ollama keeps the model resident between requests. Measured
+    # 2026-09-17: a reload does not reproduce the answers from before it, and a
+    # load with layers on the CPU rewrote 6 of 20 answers outright. Ollama's
+    # default is 5 minutes, which a slow cell can exceed, so a sweep can be
+    # silently split across two loads. This does not make generation
+    # reproducible -- it only removes one known way of losing it.
+    keep_alive: str = "60m"
 
 
 class InjectionScreenConfig(BaseModel):
