@@ -14,7 +14,13 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from threatrag.api.main import Services, app, config_with_defenses, get_services
+from threatrag.api.main import (
+    Services,
+    app,
+    config_for,
+    config_with_defenses,
+    get_services,
+)
 from threatrag.config import Config, PrincipalConfig
 from threatrag.domain.models import TLP, Answer, Principal
 from threatrag.rag.generators.ollama import GenerationError
@@ -64,9 +70,11 @@ class StubServices:
         self.config = config
         self.pipeline = pipeline
         self.requested: list[str] | None = None
+        self.retrieval: str | None = None
 
-    def pipeline_for(self, defenses: Any) -> StubPipeline:
+    def pipeline_for(self, defenses: Any, retrieval: Any = None) -> StubPipeline:
         self.requested = list(defenses)
+        self.retrieval = retrieval
         return self.pipeline
 
 
@@ -200,3 +208,25 @@ def test_hybrid_plus_segregation_is_refused_with_the_config_message() -> None:
         config_with_defenses(config, ["corpus_segregation"])
     assert caught.value.status_code == 400
     assert "rank, not a similarity" in caught.value.detail
+
+
+def test_unknown_retriever_is_refused() -> None:
+    with pytest.raises(HTTPException) as caught:
+        config_for("not_a_retriever", [])
+    assert caught.value.status_code == 400
+    assert "not_a_retriever" in caught.value.detail
+
+
+def test_named_retrievers_load_their_committed_overlay() -> None:
+    """What the UI calls "hybrid" must be the configuration that was measured."""
+    assert config_for("dense", []).retrieval.mode == "dense"
+    hybrid = config_for("hybrid", [])
+    assert hybrid.retrieval.mode == "hybrid"
+    assert hybrid.vector_store.collection == "threatrag_hybrid"
+    assert config_for("hybrid_text", []).vector_store.collection == "threatrag_hybrid_text"
+
+
+def test_requested_retriever_reaches_the_pipeline(client_and_pipeline: Any) -> None:
+    client, _ = client_and_pipeline
+    client.post("/api/ask", json={"question": "q", "retrieval": "hybrid"})
+    assert client.services.retrieval == "hybrid"  # type: ignore[attr-defined]

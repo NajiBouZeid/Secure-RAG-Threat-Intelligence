@@ -36,6 +36,15 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 PRINCIPAL_HEADER = "X-Principal-Id"
 
+# Named retrievers, defined by the same committed overlays the benchmark ran,
+# so what the UI calls "hybrid" is the configuration that was measured rather
+# than a second copy of those settings that can drift from it.
+RETRIEVERS: dict[str, Path | None] = {
+    "dense": None,
+    "hybrid": Path("configs/experiments/retrieval_hybrid.yaml"),
+    "hybrid_text": Path("configs/experiments/retrieval_hybrid_text.yaml"),
+}
+
 
 @dataclass(slots=True)
 class Services:
@@ -55,17 +64,42 @@ class Services:
     config: Config
     embedder: Embedder
     generator: Generator
-    stores: dict[bool, VectorStore]
+    stores: dict[tuple[str, bool], VectorStore]
 
-    def pipeline_for(self, defenses: Sequence[str]) -> AnswerPipeline:
-        config = config_with_defenses(self.config, defenses)
-        segregated = "corpus_segregation" in config.defenses
-        store = self.stores.get(segregated)
+    def pipeline_for(
+        self, defenses: Sequence[str], retrieval: str | None = None
+    ) -> AnswerPipeline:
+        config = config_for(retrieval, defenses)
+        # Keyed by both, because each names a different collection: the
+        # retriever chooses which one holds the vectors, and segregation
+        # chooses whether a second restricted one is merged in.
+        key = (retrieval or "dense", "corpus_segregation" in config.defenses)
+        store = self.stores.get(key)
         if store is None:
-            store = self.stores.setdefault(segregated, factory.build_store(config))
+            store = self.stores.setdefault(key, factory.build_store(config))
         return factory.compose_answer_pipeline(
             config, embedder=self.embedder, store=store, generator=self.generator
         )
+
+
+def config_for(retrieval: str | None, defenses: Sequence[str]) -> Config:
+    """The config for one retriever and one defence set, built from disk.
+
+    Reloaded rather than patched so a named retriever means exactly what its
+    committed overlay says, including the settings -- BM25 average length,
+    which collection -- that a hand-written patch here would have to restate.
+    """
+    if retrieval is not None and retrieval not in RETRIEVERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown retriever {retrieval!r}; available: {sorted(RETRIEVERS)}",
+        )
+    overlay = RETRIEVERS.get(retrieval or "dense")
+    try:
+        config = load_config(None, [overlay] if overlay is not None else None)
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return config_with_defenses(config, defenses)
 
 
 def config_with_defenses(config: Config, defenses: Sequence[str]) -> Config:
@@ -147,11 +181,20 @@ class AskRequest(BaseModel):
     # request shape the CLI-equivalent default. An empty list is a different
     # thing and means explicitly undefended -- the two must not collapse.
     defenses: list[str] | None = Field(default=None)
+    # None means the server's own configuration, as with defenses.
+    retrieval: str | None = Field(default=None)
 
 
 class DefenseView(BaseModel):
     name: str
     enabled_by_default: bool
+
+
+class RetrieverView(BaseModel):
+    name: str
+    mode: str
+    collection: str
+    is_default: bool
 
 
 class PrincipalView(BaseModel):
@@ -196,6 +239,33 @@ def service_health(services: ServicesDep) -> dict[str, str]:
     }
 
 
+@app.get("/api/retrievers")
+def retrievers(services: ServicesDep) -> list[RetrieverView]:
+    """The retrievers the UI offers, and which one the server defaults to.
+
+    Worth exposing because dense and hybrid fail at different things: dense
+    answers 5-19% of identifier lookups and hybrid 83-100%, so a demo on the
+    default retriever can look broken while working exactly as measured.
+
+    Each one's mode and collection are read from its own overlay rather than
+    described here, so this list cannot drift from what the retriever does.
+    """
+    current = (services.config.retrieval.mode, services.config.vector_store.collection)
+    views = []
+    for name in RETRIEVERS:
+        config = config_for(name, [])
+        identity = (config.retrieval.mode, config.vector_store.collection)
+        views.append(
+            RetrieverView(
+                name=name,
+                mode=config.retrieval.mode,
+                collection=config.vector_store.collection,
+                is_default=identity == current,
+            )
+        )
+    return views
+
+
 @app.get("/api/defenses")
 def defenses(services: ServicesDep) -> list[DefenseView]:
     """The defences that can be toggled, in the order they run.
@@ -221,7 +291,7 @@ def principals(services: ServicesDep) -> list[PrincipalView]:
 
 def _pipeline(services: Services, body: AskRequest) -> AnswerPipeline:
     requested = services.config.defenses if body.defenses is None else body.defenses
-    return services.pipeline_for(requested)
+    return services.pipeline_for(requested, body.retrieval)
 
 
 @app.post("/api/search")

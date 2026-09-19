@@ -94,6 +94,10 @@
       <select id="principal"></select>
     </div>
     <div>
+      <label for="retrieval">Retriever</label>
+      <select id="retrieval"></select>
+    </div>
+    <div>
       <label for="k">Passages</label>
       <input id="k" type="number" value="5" min="1" max="20" style="width: 78px">
     </div>
@@ -218,6 +222,7 @@ async function ask() {
   try {
     const a = await post("/api/ask", {
       question, k: Number($("k").value), defenses: selectedDefenses(),
+      retrieval: $("retrieval").value,
     });
     let html = `<div class="card"><h2>Answer &mdash; ${escapeHtml(a.model)}</h2>
       <div class="answer">${renderMarkdown(a.text)}</div>`;
@@ -246,6 +251,7 @@ async function searchOnly() {
   try {
     const hits = await post("/api/search", {
       question, k: Number($("k").value), defenses: selectedDefenses(),
+      retrieval: $("retrieval").value,
     });
     out.innerHTML = `<div class="card"><h2>Retrieved context</h2>${renderHits(hits)}</div>`;
   } catch (e) {
@@ -265,6 +271,14 @@ fetch("/api/principals").then((r) => r.json()).then((list) => {
   $("principal").innerHTML = list
     .map((p) => `<option value="${p.id}">${escapeHtml(p.label)}</option>`)
     .join("");
+});
+
+// Dense and hybrid fail at different things rather than one being better, so
+// the retriever is a control and not a setting buried in a config file: an
+// identifier lookup that dense cannot answer is a demo that looks broken.
+fetch("/api/retrievers").then((r) => r.json()).then((list) => {
+  $("retrieval").innerHTML = list.map((r) => `<option value="${r.name}"${
+    r.is_default ? " selected" : ""}>${escapeHtml(r.name)} &mdash; ${escapeHtml(r.collection)}</option>`).join("");
 });
 
 fetch("/api/defenses").then((r) => r.json()).then((list) => {
