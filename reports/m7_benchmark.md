@@ -487,18 +487,26 @@ Evidence, weaker attacker: `reports/data/m7_reidentify_public.json`,
 
 * **`exf-002` on 1.5b is still not reproducible**, and three repeats expose it
   without explaining it.
-* **No defence set's utility cost is resolved on either model.** At 200
-  questions with four undefended repeats, every set stays within what
-  re-running the undefended cell produces. The M7 suspicion about `source_cap`
-  on 1.5b was not confirmed (follow-up, 2026-09-16); 7b `source_cap` leans
-  lower without clearing zero. **This verdict is now suspect in one specific
-  way.** The spread that swallows every defence effect is the spread between
-  undefended repeats, and that spread was measured under the unwarmed protocol
-  which rewrites 28% of answers between identical runs. A warmed re-run would
-  have a far narrower baseline, so a defence cost that is real and small could
-  be sitting under this negative result. The finding as published stands; what
-  is not established is whether it survives a protocol that can see smaller
-  effects. Re-running the sweep warmed is the outstanding work.
+* **No defence set's utility cost is resolved on either model, and a warmed
+  re-run on 7b does not change that.** At 200 questions with four undefended
+  repeats, every set stays within what re-running the undefended cell
+  produces. The M7 suspicion about `source_cap` on 1.5b was not confirmed
+  (follow-up, 2026-09-16); 7b `source_cap` leans lower without clearing zero.
+  This verdict was **reopened on 2026-09-17**, on the grounds that the
+  baseline spread it rests on had been measured under a protocol that rewrites
+  28% of answers between identical runs, and **closed on 2026-09-19** by
+  re-running the 7b arm warmed: four undefended repeats, a positional control,
+  `source_cap` and the full set, 200 questions each, one verified load
+  throughout. `source_cap` and the full set both read a hit delta of -0.015 to
+  -0.005 with intervals reaching zero against every repeat -- and so does
+  `none#5`, **an undefended cell, at -0.010 to -0.005**. A cell with no
+  defences reproduces the deficit the defences show, which is what a noise
+  floor looks like from the inside. Warming did not narrow the baseline at the
+  level this comparison runs at either: it spans 0.175-0.185 warmed against
+  0.175-0.185 unwarmed (next bullet). Note also that 200 questions is the
+  *entire* gold set, not a sample of it, so there is no larger n to appeal to;
+  separating an effect of two or three questions would take new gold
+  questions, not a longer run. Evidence: `reports/data/utility_warm.jsonl`.
 * **Answers at temperature 0 are not reproducible on this setup.** Identical
   undefended runs in one session rewrote up to 72 of 200 answers.
   **Cause established 2026-09-17, and it is the protocol, not the model.** A
