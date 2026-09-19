@@ -11,12 +11,14 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from threatrag.api.main import Services, app, get_services
+from threatrag.api.main import Services, app, config_with_defenses, get_services
 from threatrag.config import Config, PrincipalConfig
 from threatrag.domain.models import TLP, Answer, Principal
 from threatrag.rag.generators.ollama import GenerationError
+from threatrag.security.defenses import available as available_defenses
 
 
 class StubPipeline:
@@ -50,15 +52,36 @@ def _config() -> Config:
     )
 
 
+class StubServices:
+    """Stands in for Services without building an embedder or a store.
+
+    Records the defence set each request asked for, which is the part of the
+    new wiring worth asserting: the routes must pass the *requested* set
+    through rather than serving whatever the server started with.
+    """
+
+    def __init__(self, config: Config, pipeline: StubPipeline) -> None:
+        self.config = config
+        self.pipeline = pipeline
+        self.requested: list[str] | None = None
+
+    def pipeline_for(self, defenses: Any) -> StubPipeline:
+        self.requested = list(defenses)
+        return self.pipeline
+
+
 @pytest.fixture
 def client_and_pipeline() -> Any:
     pipeline = StubPipeline()
+    services = StubServices(_config(), pipeline)
 
     def override() -> Services:
-        return Services(config=_config(), pipeline=pipeline)  # type: ignore[arg-type]
+        return services  # type: ignore[return-value]
 
     app.dependency_overrides[get_services] = override
-    yield TestClient(app), pipeline
+    client = TestClient(app)
+    client.services = services  # type: ignore[attr-defined]
+    yield client, pipeline
     app.dependency_overrides.clear()
 
 
@@ -119,3 +142,61 @@ def test_empty_question_is_rejected(client_and_pipeline: Any) -> None:
 
 def test_principal_config_defaults_to_clear() -> None:
     assert PrincipalConfig(label="x").clearance is TLP.CLEAR
+
+
+def test_defenses_are_listed_in_canonical_order(client_and_pipeline: Any) -> None:
+    """The order a set runs in belongs to the registry, not to the client."""
+    client, _ = client_and_pipeline
+    body = client.get("/api/defenses").json()
+    assert [d["name"] for d in body] == list(available_defenses())
+    assert all(d["enabled_by_default"] is False for d in body)
+
+
+def test_request_defences_reach_the_pipeline(client_and_pipeline: Any) -> None:
+    client, _ = client_and_pipeline
+    client.post("/api/ask", json={"question": "q", "defenses": ["egress_filter"]})
+    assert client.services.requested == ["egress_filter"]  # type: ignore[attr-defined]
+
+
+def test_omitted_and_empty_defences_are_different(client_and_pipeline: Any) -> None:
+    """None means "the server's configuration"; [] means "explicitly none".
+
+    Collapsing them would make an undefended request indistinguishable from a
+    default one, which is precisely the comparison this UI exists to show.
+    """
+    client, _ = client_and_pipeline
+    config = _config()
+    config.defenses = ["egress_filter"]
+    client.services.config = config  # type: ignore[attr-defined]
+
+    client.post("/api/ask", json={"question": "q"})
+    assert client.services.requested == ["egress_filter"]  # type: ignore[attr-defined]
+
+    client.post("/api/ask", json={"question": "q", "defenses": []})
+    assert client.services.requested == []  # type: ignore[attr-defined]
+
+
+def test_unknown_defence_is_refused() -> None:
+    with pytest.raises(HTTPException) as caught:
+        config_with_defenses(_config(), ["not_a_defence"])
+    assert caught.value.status_code == 400
+    assert "not_a_defence" in caught.value.detail
+
+
+def test_search_does_not_report_what_a_clearance_cannot_see(client_and_pipeline: Any) -> None:
+    """A withheld count would need a query at a clearance the caller lacks."""
+    client, _ = client_and_pipeline
+    body = client.post("/api/search", json={"question": "q"}).json()
+    assert isinstance(body, list)
+
+
+def test_hybrid_plus_segregation_is_refused_with_the_config_message() -> None:
+    """The combination rule lives in the config validator; the API must not
+    duplicate it, and must not skip it by copying the model instead."""
+    config = _config()
+    config.retrieval.mode = "hybrid"
+    config.retrieval.score_threshold = None
+    with pytest.raises(HTTPException) as caught:
+        config_with_defenses(config, ["corpus_segregation"])
+    assert caught.value.status_code == 400
+    assert "rank, not a similarity" in caught.value.detail
