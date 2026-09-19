@@ -35,3 +35,6 @@ qdrant_storage/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Sweep console logs are scratch; the JSONL beside them is the evidence.
+reports/data/*.log
