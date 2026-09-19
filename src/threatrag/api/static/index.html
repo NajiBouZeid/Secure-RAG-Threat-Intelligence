@@ -60,6 +60,22 @@
   .warn { color: var(--warn); font-size: 13px; margin-top: 10px; }
   .error { color: var(--danger); }
   .muted { color: var(--muted); }
+  .tier { background: #2a3540; color: var(--ink); }
+  .tier-3 { background: var(--danger); color: #1a0d0c; }
+  .tier-2 { background: var(--warn); color: #1f1408; }
+  .defs { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+  .defs label {
+    display: flex; gap: 6px; align-items: center; margin: 0;
+    font-size: 13px; color: var(--ink); cursor: pointer;
+  }
+  .defs input { padding: 0; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-ok { background: var(--clear); } .dot-bad { background: var(--danger); }
+  .health { display: flex; gap: 12px; align-items: center; font-size: 12px; color: var(--muted); }
+  .fired { color: var(--clear); } .abstained { color: var(--warn); }
+  .blocked {
+    border-left: 3px solid var(--danger); padding-left: 10px; color: var(--danger);
+  }
   footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);
            font-size: 0.8rem; color: var(--muted); }
 </style>
@@ -68,6 +84,7 @@
 <header>
   <h1>Threat Intelligence Assistant</h1>
   <span class="lab">lab build &mdash; principal is chosen, not authenticated</span>
+  <span class="health" id="health" style="margin-left:auto"></span>
 </header>
 
 <main>
@@ -80,6 +97,11 @@
       <label for="k">Passages</label>
       <input id="k" type="number" value="5" min="1" max="20" style="width: 78px">
     </div>
+  </div>
+
+  <div style="margin-top: 14px">
+    <label>Defences <span class="muted">&mdash; applied in a fixed order, whatever you tick</span></label>
+    <div class="defs" id="defenses"></div>
   </div>
 
   <div style="margin-top: 12px">
@@ -101,6 +123,11 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const out = $("out");
+
+// Trust tier governs how much a passage may steer the answer; TLP governs who
+// may read it. Both are shown because an injection is a trust-tier failure and
+// a leak is a TLP failure, and the UI should not make them look like one thing.
+const TIERS = ["authoritative", "vendor", "community", "untrusted"];
 
 const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => (
   { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
@@ -127,12 +154,17 @@ function renderHits(hits) {
       <div class="meta">
         <span class="score">[${i + 1}] ${h.score.toFixed(3)}</span>
         <span class="badge tlp-${c.tlp}">TLP:${c.tlp}</span>
+        <span class="badge tier tier-${c.trust_tier}">${TIERS[c.trust_tier]}</span>
         <strong>${escapeHtml(c.source_ref)}</strong>
         <span class="muted">${escapeHtml(c.title)}</span>
       </div>
       <div class="body">${escapeHtml(c.text.slice(0, 320))}${c.text.length > 320 ? "…" : ""}</div>
     </div>`;
   }).join("");
+}
+
+function selectedDefenses() {
+  return Array.from(document.querySelectorAll("#defenses input:checked")).map((i) => i.value);
 }
 
 async function post(path, body) {
@@ -151,13 +183,42 @@ function busy(on, message) {
   $("status").textContent = message || "";
 }
 
+// The point of the panel: a defence that ran and cleared the answer, a defence
+// that ran and could not judge it, and a defence that was never on are three
+// different states. Reporting the middle one as a pass is the bug fixed on
+// 2026-09-17, so abstentions are shown as loudly as anything else.
+function renderDefenses(a) {
+  const applied = a.defenses_applied || [];
+  const abstained = new Set(a.defenses_abstained || []);
+  const stripped = a.stripped_urls || [];
+  let html = '<div class="card"><h2>Defences</h2>';
+  if (!applied.length) {
+    html += '<p class="muted">None. This answer was produced undefended.</p>';
+  } else {
+    html += applied.map((d) => abstained.has(d)
+      ? `<div class="cite abstained">${escapeHtml(d)} &mdash; ran, could not judge this answer</div>`
+      : `<div class="cite fired">${escapeHtml(d)} &mdash; ran</div>`).join("");
+  }
+  if (stripped.length) {
+    html += `<div class="warn">Stripped ${stripped.length} URL(s) before rendering:
+      ${stripped.map((u) => escapeHtml(u)).join(", ")}</div>`;
+  }
+  if (a.blocked) {
+    html += `<div class="warn blocked">Answer blocked${
+      a.block_reason ? ": " + escapeHtml(a.block_reason) : ""}</div>`;
+  }
+  return html + "</div>";
+}
+
 async function ask() {
   const question = $("q").value.trim();
   if (!question) return;
   busy(true, "retrieving and generating…");
   out.innerHTML = "";
   try {
-    const a = await post("/api/ask", { question, k: Number($("k").value) });
+    const a = await post("/api/ask", {
+      question, k: Number($("k").value), defenses: selectedDefenses(),
+    });
     let html = `<div class="card"><h2>Answer &mdash; ${escapeHtml(a.model)}</h2>
       <div class="answer">${renderMarkdown(a.text)}</div>`;
     if (a.citations.length) {
@@ -167,7 +228,8 @@ async function ask() {
       html += `<div class="warn">Unsupported citations: ${a.unsupported_citations.join(", ")}
         &mdash; the model referenced passages that were never retrieved.</div>`;
     }
-    html += `</div><div class="card"><h2>Retrieved context</h2>${renderHits(a.retrieved)}</div>`;
+    html += "</div>" + renderDefenses(a) +
+      `<div class="card"><h2>Retrieved context</h2>${renderHits(a.retrieved)}</div>`;
     out.innerHTML = html;
   } catch (e) {
     out.innerHTML = `<div class="card error">${escapeHtml(e.message)}</div>`;
@@ -182,7 +244,9 @@ async function searchOnly() {
   busy(true, "retrieving…");
   out.innerHTML = "";
   try {
-    const hits = await post("/api/search", { question, k: Number($("k").value) });
+    const hits = await post("/api/search", {
+      question, k: Number($("k").value), defenses: selectedDefenses(),
+    });
     out.innerHTML = `<div class="card"><h2>Retrieved context</h2>${renderHits(hits)}</div>`;
   } catch (e) {
     out.innerHTML = `<div class="card error">${escapeHtml(e.message)}</div>`;
@@ -202,6 +266,27 @@ fetch("/api/principals").then((r) => r.json()).then((list) => {
     .map((p) => `<option value="${p.id}">${escapeHtml(p.label)}</option>`)
     .join("");
 });
+
+fetch("/api/defenses").then((r) => r.json()).then((list) => {
+  $("defenses").innerHTML = list.map((d) => `<label>
+    <input type="checkbox" value="${d.name}"${d.enabled_by_default ? " checked" : ""}>
+    ${escapeHtml(d.name)}</label>`).join("");
+});
+
+// Checked before anyone asks anything, because the failure this catches -- a
+// backing service that is down -- otherwise shows up as a confusing error
+// halfway through a demo.
+function refreshHealth() {
+  fetch("/api/health/services").then((r) => r.json()).then((h) => {
+    const dot = (ok) => `<span class="dot ${ok ? "dot-ok" : "dot-bad"}"></span>`;
+    $("health").innerHTML =
+      `${dot(h.qdrant === "ok")}qdrant ${escapeHtml(h.qdrant)}` +
+      `${dot(h.ollama === "ok")}ollama ${escapeHtml(h.ollama)}` +
+      `<span>${escapeHtml(h.model)} &middot; ${escapeHtml(h.collection)} &middot; ${escapeHtml(h.retrieval_mode)}</span>`;
+  }).catch(() => { $("health").textContent = "health unavailable"; });
+}
+refreshHealth();
+setInterval(refreshHealth, 15000);
 </script>
 
 <footer>
