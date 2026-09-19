@@ -14,6 +14,7 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
+from threatrag.api import main
 from threatrag.api.main import (
     Services,
     app,
@@ -230,3 +231,39 @@ def test_requested_retriever_reaches_the_pipeline(client_and_pipeline: Any) -> N
     client, _ = client_and_pipeline
     client.post("/api/ask", json={"question": "q", "retrieval": "hybrid"})
     assert client.services.retrieval == "hybrid"  # type: ignore[attr-defined]
+
+
+def test_attack_list_does_not_hand_out_payloads(client_and_pipeline: Any) -> None:
+    """The poison text is in the repo; an endpoint that serves it turns a
+    running instance into a source of working injection strings."""
+    client, _ = client_and_pipeline
+    body = client.get("/api/attacks").json()
+    assert body, "the committed attack corpus should not be empty"
+    for attack in body:
+        assert set(attack) == {
+            "id",
+            "family",
+            "description",
+            "corpus",
+            "target_query",
+            "tlp",
+            "trust_tier",
+        }
+
+
+def test_unknown_attack_is_a_404(client_and_pipeline: Any) -> None:
+    client, _ = client_and_pipeline
+    response = client.post("/api/attacks/run", json={"attack_id": "no-such-attack"})
+    assert response.status_code == 404
+
+
+def test_only_one_attack_runs_at_a_time(client_and_pipeline: Any) -> None:
+    """Two overlapping runs would each retrieve the other's poison."""
+    client, _ = client_and_pipeline
+    known = client.get("/api/attacks").json()[0]["id"]
+    main.ATTACK_LOCK.acquire()
+    try:
+        response = client.post("/api/attacks/run", json={"attack_id": known})
+    finally:
+        main.ATTACK_LOCK.release()
+    assert response.status_code == 409

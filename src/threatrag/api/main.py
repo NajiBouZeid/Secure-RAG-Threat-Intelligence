@@ -13,6 +13,7 @@ on it inside the query.
 
 from __future__ import annotations
 
+import threading
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -31,6 +32,10 @@ from threatrag.domain.ports import Embedder, Generator, VectorStore
 from threatrag.eval import findings as findings_module
 from threatrag.rag.generators.ollama import GenerationError
 from threatrag.rag.pipeline import AnswerPipeline
+from threatrag.security.attacks.loader import DEFAULT_ATTACK_DIR, load_attacks
+from threatrag.security.attacks.runner import AttackResult
+from threatrag.security.attacks.schema import Attack
+from threatrag.security.attacks.sink import ExfiltrationSink
 from threatrag.security.defenses import available as available_defenses
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -40,6 +45,19 @@ PRINCIPAL_HEADER = "X-Principal-Id"
 # Named retrievers, defined by the same committed overlays the benchmark ran,
 # so what the UI calls "hybrid" is the configuration that was measured rather
 # than a second copy of those settings that can drift from it.
+# One attack at a time. A run indexes its poison document into the live
+# collection and deletes it again, so two overlapping runs would each see the
+# other's poison and neither result would mean anything.
+ATTACK_LOCK = threading.Lock()
+
+# The corpora an attack may be chosen from. Fixed, because the endpoint takes
+# an id and never a payload: this lab runs the attacks it has under version
+# control, and is not a service for running text someone posts to it.
+ATTACK_DIRS: dict[str, Path] = {
+    "m4": Path(DEFAULT_ATTACK_DIR),
+    "evasion": Path(DEFAULT_ATTACK_DIR) / "evasion",
+}
+
 RETRIEVERS: dict[str, Path | None] = {
     "dense": None,
     "hybrid": Path("configs/experiments/retrieval_hybrid.yaml"),
@@ -189,6 +207,31 @@ class DefenseView(BaseModel):
     enabled_by_default: bool
 
 
+class AttackView(BaseModel):
+    id: str
+    family: str
+    description: str
+    corpus: str
+    target_query: str
+    tlp: str
+    trust_tier: int
+
+
+class AttackRunRequest(BaseModel):
+    # An id from the committed corpus, never attack text. The difference is
+    # the difference between a lab that runs its own fixtures and a service
+    # that will index whatever is posted to it.
+    attack_id: str
+    defenses: list[str] | None = Field(default=None)
+    retrieval: str | None = Field(default=None)
+
+
+class AttackRunResponse(BaseModel):
+    result: AttackResult
+    defenses_applied: list[str]
+    retrieval: str
+
+
 class RetrieverView(BaseModel):
     name: str
     mode: str
@@ -319,6 +362,77 @@ def ask(body: AskRequest, services: ServicesDep, principal: PrincipalDep) -> Ans
         # 502: the backend failed, the request was fine. Distinguishable in the
         # UI from "no evidence", which is a successful answer with no content.
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+def _attack_corpus() -> dict[str, tuple[Attack, str]]:
+    """Every attack that can be run, by id, with the corpus it came from."""
+    found: dict[str, tuple[Attack, str]] = {}
+    for corpus, directory in ATTACK_DIRS.items():
+        if not directory.exists():
+            continue
+        for attack in load_attacks(directory):
+            found[attack.id] = (attack, corpus)
+    return found
+
+
+@app.get("/api/attacks")
+def attacks() -> list[AttackView]:
+    """The attack corpus, as data rather than as payloads.
+
+    The poison text is deliberately not returned. It is in the repository for
+    anyone who wants it; putting it in a JSON response makes this endpoint a
+    convenient way to fetch working injection strings from a running service.
+    """
+    return [
+        AttackView(
+            id=attack.id,
+            family=str(attack.family),
+            description=attack.description,
+            corpus=corpus,
+            target_query=attack.target_query,
+            tlp=str(attack.doc.tlp),
+            trust_tier=int(attack.doc.trust_tier),
+        )
+        for attack, corpus in _attack_corpus().values()
+    ]
+
+
+@app.post("/api/attacks/run")
+def run_attack(body: AttackRunRequest, services: ServicesDep) -> AttackRunResponse:
+    """Run one committed attack against a chosen defence set, for real.
+
+    This indexes the attack's poison document into the live collection, asks
+    its query, evaluates the answer and deletes the document again. The
+    deletion is in the runner's `finally`, so the poison does not outlive its
+    own run even if generation fails.
+
+    Serialised behind a lock: two overlapping runs would each retrieve the
+    other's poison. The sink binds a fixed port for the same reason the
+    benchmark fixes it -- the poison text embeds that URL, so a changing port
+    changes the document and its ranking.
+    """
+    entry = _attack_corpus().get(body.attack_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail=f"Unknown attack {body.attack_id!r}")
+    attack, _ = entry
+
+    requested = services.config.defenses if body.defenses is None else body.defenses
+    config = config_for(body.retrieval, requested)
+    if not ATTACK_LOCK.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="An attack run is already in progress.")
+    try:
+        with ExfiltrationSink() as sink:
+            runner = factory.build_attack_runner(config, sink=sink)
+            result = runner.run(attack)
+    except GenerationError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    finally:
+        ATTACK_LOCK.release()
+    return AttackRunResponse(
+        result=result,
+        defenses_applied=list(config.defenses),
+        retrieval=body.retrieval or "dense",
+    )
 
 
 @app.get("/api/findings")

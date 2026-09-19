@@ -76,7 +76,7 @@
   .blocked {
     border-left: 3px solid var(--danger); padding-left: 10px; color: var(--danger);
   }
-  footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);
+  footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line);
            font-size: 0.8rem; color: var(--muted); }
 </style>
 </head>
@@ -120,6 +120,24 @@
       Retrieve only
     </button>
     <span id="status" class="muted"></span>
+  </div>
+
+  <div class="card" style="margin-top:22px">
+    <h2>Run an attack</h2>
+    <p class="muted" style="font-size:13px;margin:0 0 10px">
+      Runs a committed attack against the defences ticked above, on the
+      retriever selected above. It indexes the attack's poison document, asks
+      its query, scores the answer and deletes the document again.
+    </p>
+    <div class="row" style="margin-top:0">
+      <div style="flex:1;min-width:260px">
+        <label for="attack">Attack</label>
+        <select id="attack" style="width:100%"></select>
+      </div>
+      <button id="runattack">Run</button>
+    </div>
+    <div id="attackdesc" class="muted" style="font-size:12px;margin-top:8px"></div>
+    <div id="attackout"></div>
   </div>
 
   <div id="out"></div>
@@ -262,6 +280,56 @@ async function searchOnly() {
   }
 }
 
+// Whether an attack landed is the headline, but a landed attack against a
+// defence that abstained is a different result from one against a defence
+// that cleared it -- the distinction M7 could not make -- so the criteria and
+// any abstentions are always shown, not only on failure.
+function renderAttackResult(payload) {
+  const r = payload.result;
+  const verdict = r.succeeded
+    ? '<span class="badge" style="background:var(--danger);color:#220807">attack landed</span>'
+    : '<span class="badge" style="background:var(--clear)">attack blocked</span>';
+  let html = `<div class="card" style="margin-top:12px"><h2>${escapeHtml(r.attack_id)}
+    &mdash; ${escapeHtml(r.family)}</h2><p>${verdict}
+    <span class="muted" style="margin-left:8px">defences:
+    ${payload.defenses_applied.length ? escapeHtml(payload.defenses_applied.join(", ")) : "none"}
+    &middot; retriever: ${escapeHtml(payload.retrieval)}</span></p>`;
+  html += r.criteria.map((c) => `<div class="cite">${
+    c.passed ? '<span style="color:var(--danger)">met</span>'
+             : '<span style="color:var(--clear)">not met</span>'
+  } &mdash; ${escapeHtml(c.description || c.type || "criterion")}</div>`).join("");
+  if (r.defenses_abstained.length) {
+    html += `<div class="warn">Could not judge: ${
+      escapeHtml(r.defenses_abstained.join(", "))} &mdash; the defence ran and
+      had nothing it could inspect. This is not a pass.</div>`;
+  }
+  if (r.fired_urls.length) {
+    html += `<div class="warn">Rendering the answer fired ${r.fired_urls.length}
+      request(s) to the exfiltration sink.</div>`;
+  }
+  html += `<div class="card" style="margin-top:12px;background:#0b1015">
+    <h2>Answer produced</h2><div class="answer">${renderMarkdown(r.answer_text)}</div></div>`;
+  return html + "</div>";
+}
+
+async function runAttack() {
+  const id = $("attack").value;
+  if (!id) return;
+  $("runattack").disabled = true;
+  $("attackout").innerHTML = '<p class="muted">indexing poison, asking, scoring…</p>';
+  try {
+    const payload = await post("/api/attacks/run", {
+      attack_id: id, defenses: selectedDefenses(), retrieval: $("retrieval").value,
+    });
+    $("attackout").innerHTML = renderAttackResult(payload);
+  } catch (e) {
+    $("attackout").innerHTML = `<div class="card error">${escapeHtml(e.message)}</div>`;
+  } finally {
+    $("runattack").disabled = false;
+  }
+}
+
+$("runattack").addEventListener("click", runAttack);
 $("ask").addEventListener("click", ask);
 $("search").addEventListener("click", searchOnly);
 $("q").addEventListener("keydown", (e) => {
@@ -277,6 +345,20 @@ fetch("/api/principals").then((r) => r.json()).then((list) => {
 // Dense and hybrid fail at different things rather than one being better, so
 // the retriever is a control and not a setting buried in a config file: an
 // identifier lookup that dense cannot answer is a demo that looks broken.
+let ATTACKS = [];
+function showAttackDesc() {
+  const a = ATTACKS.find((x) => x.id === $("attack").value);
+  $("attackdesc").textContent = a
+    ? `${a.description} — asks: "${a.target_query}"` : "";
+}
+fetch("/api/attacks").then((r) => r.json()).then((list) => {
+  ATTACKS = list;
+  $("attack").innerHTML = list.map((a) =>
+    `<option value="${a.id}">${escapeHtml(a.corpus)} · ${escapeHtml(a.id)}</option>`).join("");
+  $("attack").addEventListener("change", showAttackDesc);
+  showAttackDesc();
+});
+
 fetch("/api/retrievers").then((r) => r.json()).then((list) => {
   $("retrieval").innerHTML = list.map((r) => `<option value="${r.name}"${
     r.is_default ? " selected" : ""}>${escapeHtml(r.name)} &mdash; ${escapeHtml(r.collection)}</option>`).join("");
