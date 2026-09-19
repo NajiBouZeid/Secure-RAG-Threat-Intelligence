@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Findings &mdash; Secure Threat Intelligence RAG</title>
+<style>
+  :root {
+    --bg: #0f1418; --panel: #161d23; --line: #24303a; --ink: #e6edf3;
+    --muted: #8b9aa7; --accent: #4c9aff;
+    /* Status steps, validated against this surface. Meaning never rides on
+       colour alone here: every pill carries a word as well. */
+    --good: #0ca30c; --critical: #d03b3b; --warning: #fab219;
+    /* Categorical slots 1 and 2, checked with the palette validator against
+       this page's surface: normal-vision dE 31.8, CVD dE 26.8. The obvious
+       pick -- muted grey against the UI accent -- failed the normal-vision
+       floor at 14.3, which is why it is not used. */
+    --series-1: #3987e5; --series-2: #d95926;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    padding: 14px 20px; border-bottom: 1px solid var(--line);
+    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  }
+  h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  a { color: var(--accent); }
+  nav { margin-left: auto; display: flex; gap: 14px; font-size: 13px; }
+  main { max-width: 1000px; margin: 0 auto; padding: 20px 20px 60px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; padding: 16px 18px; margin-top: 18px;
+  }
+  .card h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .6px;
+    color: var(--muted); margin: 0 0 4px;
+  }
+  .card .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td {
+    text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums; vertical-align: top;
+  }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  td.num { text-align: right; }
+  .muted { color: var(--muted); }
+  .pill {
+    display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 20px;
+    letter-spacing: .3px; white-space: nowrap;
+  }
+  .pill-blocked { background: var(--good); color: #052105; }
+  .pill-landed  { background: var(--critical); color: #220807; }
+  .pill-mixed   { background: var(--warning); color: #221802; }
+  .lede { color: var(--muted); max-width: 72ch; }
+  .lede strong { color: var(--ink); }
+  ul.limits { margin: 0; padding-left: 18px; color: var(--muted); }
+  ul.limits li { margin-bottom: 8px; }
+  ul.limits strong { color: var(--ink); }
+  .legend {
+    display: flex; gap: 18px; font-size: 12px; color: var(--muted);
+    margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .swatch {
+    width: 10px; height: 10px; border-radius: 2px;
+    display: inline-block; margin-right: 5px;
+  }
+  .tip {
+    position: fixed; pointer-events: none; opacity: 0; transition: opacity .1s;
+    background: #05090c; border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 9px; font-size: 12px; z-index: 10; max-width: 280px;
+  }
+  .missing { color: var(--warning); font-size: 13px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 12px; margin-top: 12px; }
+  code { background: #0b1015; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Secure Threat Intelligence RAG &mdash; findings</h1>
+  <nav><a href="/">Console</a><span class="muted">Findings</span></nav>
+</header>
+
+<main>
+  <p class="lede" style="margin-top:18px">
+    Everything below is read back from the evidence files committed in
+    <code>reports/data</code>. Nothing on this page runs a model or queries the
+    index, so it reports the same numbers whether or not the services are up.
+    Where repeats of one cell disagree, <strong>both ends are shown and the cell
+    is marked unstable</strong> rather than averaged into something steadier
+    than the measurement was.
+  </p>
+
+  <div class="card">
+    <h2>Attacks that landed</h2>
+    <p class="sub">Seven attacks (m4) and two evasion variants, per defence set
+      and model. Lower is better, and the result worth reading is the
+      difference between the undefended row and the full set.</p>
+    <div id="attacks"></div>
+  </div>
+
+  <div class="card">
+    <h2>The retriever changes the security result</h2>
+    <p class="sub">The same attacks and the same defences over three
+      retrievers. Swapping the retriever re-scoped every defence, which is why
+      a defence result only means something alongside the retriever it was
+      measured on.</p>
+    <div id="retrievers"></div>
+  </div>
+
+  <div class="card">
+    <h2>What the defences cost in answer quality</h2>
+    <p class="sub">Each dot is one benchmark cell over 200 gold questions. The
+      band is the range the <em>undefended</em> configuration produces when it
+      is simply re-run. A defence has only been shown to cost something if it
+      sits clear of that band.</p>
+    <div class="legend">
+      <span><span class="swatch" style="background:#3987e5"></span>undefended (baseline)</span>
+      <span><span class="swatch" style="background:#d95926"></span>defence set</span>
+      <span><span class="swatch" style="background:#8b9aa7;opacity:.4"></span>baseline range</span>
+    </div>
+    <div id="utility"></div>
+    <details>
+      <summary>Table view</summary>
+      <div id="utility-table"></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>What this does not settle</h2>
+    <p class="sub">Kept on the same page as the results, because a result whose
+      limits live somewhere else gets quoted without them.</p>
+    <ul class="limits">
+      <li><strong>No defence set's utility cost is resolved.</strong> The dots
+        above overlap the baseline band &mdash; and so does an undefended
+        control run in the same position. A cell that defends nothing
+        reproduces the deficit the defended cells show, so the deficit is not
+        evidence of a defence cost.</li>
+      <li><strong>Answers at temperature 0 are not reproducible.</strong> A
+        first generation inherits the cache left by whatever ran before it.
+        Generating twice and keeping the second fixes that <em>within</em> a
+        process and not across processes, so which cell ran first is a
+        confound on any comparison.</li>
+      <li><strong>One attack is a coin flip on the small model.</strong> Three
+        repeats expose it without explaining it.</li>
+      <li><strong>The two attack routes are not on one scale</strong>, and are
+        deliberately not collapsed into a single security score.</li>
+      <li><strong>Hybrid retrieval cannot be combined with corpus
+        segregation</strong> as built: fusing the two collections would have to
+        be done by rank, and it is done by score.</li>
+    </ul>
+    <p class="sub" style="margin:14px 0 0">Full detail and the reasoning behind
+      each: <code>reports/m7_benchmark.md</code> and
+      <code>reports/hybrid_retrieval.md</code>.</p>
+  </div>
+</main>
+
+<div class="tip" id="tip"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
+  { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const tip = $("tip");
+function showTip(event, html) {
+  tip.innerHTML = html;
+  tip.style.opacity = 1;
+  tip.style.left = Math.min(event.clientX + 14, window.innerWidth - 300) + "px";
+  tip.style.top = (event.clientY + 16) + "px";
+}
+const hideTip = () => { tip.style.opacity = 0; };
+
+// A range and a word, not an average: "2-3 of 7, unstable" says something that
+// a mean of 2.67 would hide, and which repeat disagreed is the finding.
+function outcome(cell) {
+  const range = cell.landed_low === cell.landed_high
+    ? String(cell.landed_low)
+    : cell.landed_low + "–" + cell.landed_high;
+  const cls = cell.unstable.length ? "pill-mixed"
+    : cell.landed_high === 0 ? "pill-blocked" : "pill-landed";
+  const word = cell.unstable.length ? "unstable"
+    : cell.landed_high === 0 ? "all blocked" : "landed";
+  return '<span class="pill ' + cls + '">' + range + " of " + cell.total
+    + " &middot; " + word + "</span>";
+}
+
+function unstableNote(cell) {
+  if (!cell.unstable.length) return "";
+  return '<div class="muted" style="font-size:11px;margin-top:3px">'
+    + cell.unstable.map(esc).join(", ") + "</div>";
+}
+
+function renderAttacks(cells) {
+  if (!cells.length) return '<p class="missing">m7_sweep.jsonl not found.</p>';
+  const models = [...new Set(cells.map((c) => c.model))];
+  const sets = [...new Set(cells.map((c) => c.defense_set))];
+  const corpora = [...new Set(cells.map((c) => c.corpus))];
+  const at = (s, m, k) => cells.find(
+    (c) => c.defense_set === s && c.model === m && c.corpus === k);
+  let html = "<table><thead><tr><th>Defence set</th>";
+  for (const m of models) {
+    for (const k of corpora) {
+      html += "<th>" + esc(m) + ' <span class="muted">' + esc(k) + "</span></th>";
+    }
+  }
+  html += "</tr></thead><tbody>";
+  for (const s of sets) {
+    html += "<tr><td>" + esc(s) + "</td>";
+    for (const m of models) {
+      for (const k of corpora) {
+        const cell = at(s, m, k);
+        html += "<td>" + (cell
+          ? outcome(cell) + unstableNote(cell)
+          : '<span class="muted">&mdash;</span>') + "</td>";
+      }
+    }
+    html += "</tr>";
+  }
+  return html + "</tbody></table>";
+}
+
+function renderRetrievers(cells) {
+  if (!cells.length) {
+    return '<p class="missing">hybrid_attacks_variants.jsonl not found.</p>';
+  }
+  const rows = cells.slice().sort((a, b) =>
+    a.corpus.localeCompare(b.corpus)
+    || a.defenses.localeCompare(b.defenses)
+    || a.retrieval.localeCompare(b.retrieval));
+  let html = "<table><thead><tr><th>Retriever</th><th>Defences</th>"
+    + "<th>Corpus</th><th>Outcome</th></tr></thead><tbody>";
+  for (const cell of rows) {
+    html += "<tr><td>" + esc(cell.retrieval) + "</td><td>" + esc(cell.defenses)
+      + "</td><td>" + esc(cell.corpus) + "</td><td>" + outcome(cell)
+      + unstableNote(cell) + "</td></tr>";
+  }
+  return html + "</tbody></table>";
+}
+
+// Small multiples, one facet per model and protocol, each with its own scale.
+// The question is only ever asked within a facet -- does a defence sit clear
+// of the range its own undefended cell produces -- and a shared axis answers
+// it badly: 1.5b sits near 0.305 and 7b near 0.175, so one scale spanning
+// both compresses every comparison that matters into a few pixels. The models
+// are not compared here, and the report does not compare them either.
+function renderUtility(rows) {
+  if (!rows.length) return '<p class="missing">No utility evidence found.</p>';
+  const groups = [];
+  for (const model of [...new Set(rows.map((r) => r.model))]) {
+    for (const warm of [false, true]) {
+      const cells = rows.filter((r) => r.warm === warm && r.model === model);
+      if (cells.length) {
+        groups.push({
+          label: model + " · " + (warm ? "warmed" : "unwarmed"),
+          cells: cells.slice().sort((a, b) =>
+            (a.label === "none" ? 0 : 1) - (b.label === "none" ? 0 : 1)
+            || a.label.localeCompare(b.label) || a.repeat - b.repeat),
+        });
+      }
+    }
+  }
+  const W = 900, L = 186, R = 60, rowH = 21;
+  return groups.map((group) => {
+    const values = group.cells.map((c) => c.utility);
+    const span = Math.max(...values) - Math.min(...values);
+    // A floor on the span so a facet whose cells all agree does not explode
+    // three identical numbers across the full width as though they differed.
+    const pad = Math.max(span * 0.35, 0.006);
+    const lo = Math.min(...values) - pad;
+    const hi = Math.max(...values) + pad;
+    const x = (v) => L + ((v - lo) / (hi - lo)) * (W - L - R);
+    const base = group.cells.filter((c) => c.label === "none").map((c) => c.utility);
+    const H = group.cells.length * rowH + 62;
+
+    let body = '<text x="0" y="14" fill="#e6edf3" font-size="12"'
+      + ' font-weight="600">' + esc(group.label) + "</text>";
+    if (base.length) {
+      const x0 = x(Math.min(...base));
+      const x1 = x(Math.max(...base));
+      body += '<rect x="' + x0 + '" y="24" width="' + Math.max(x1 - x0, 2)
+        + '" height="' + (group.cells.length * rowH)
+        + '" fill="#8b9aa7" opacity="0.16"></rect>';
+    }
+    let axis = "";
+    for (let i = 0; i <= 3; i++) {
+      const v = lo + ((hi - lo) * i) / 3;
+      axis += '<line x1="' + x(v) + '" y1="24" x2="' + x(v) + '" y2="'
+        + (H - 26) + '" stroke="#24303a"></line>'
+        + '<text x="' + x(v) + '" y="' + (H - 10) + '" text-anchor="middle"'
+        + ' fill="#8b9aa7" font-size="10">' + v.toFixed(3) + "</text>";
+    }
+    let y = 24;
+    for (const cell of group.cells) {
+      y += rowH;
+      const isBase = cell.label === "none";
+      const colour = isBase ? "#3987e5" : "#d95926";
+      const name = esc(cell.label) + (isBase ? " #" + cell.repeat : "");
+      body += '<text x="' + (L - 12) + '" y="' + (y + 4)
+        + '" text-anchor="end" fill="#8b9aa7" font-size="11">' + name + "</text>";
+      // 2px surface ring so dots landing on one value stay countable.
+      body += '<circle class="dot" cx="' + x(cell.utility) + '" cy="' + y
+        + '" r="5" fill="' + colour + '" stroke="#161d23" stroke-width="2"'
+        + ' data-tip="' + name + " &middot; " + esc(cell.model) + " &middot; "
+        + (cell.warm ? "warmed" : "unwarmed") + "<br>utility "
+        + cell.utility.toFixed(3) + " &middot; recall " + cell.recall.toFixed(3)
+        + '"></circle>';
+      // One row per cell, so every mark can carry its value without collision.
+      body += '<text x="' + (x(cell.utility) + 11) + '" y="' + (y + 4)
+        + '" fill="#8b9aa7" font-size="10">' + cell.utility.toFixed(3) + "</text>";
+    }
+    return '<svg viewBox="0 0 ' + W + " " + H + '" width="100%" role="img"'
+      + ' style="margin-bottom:6px" aria-label="Answer utility for '
+      + esc(group.label) + ' against its undefended baseline range">'
+      + axis + body + "</svg>";
+  }).join("");
+}
+
+function renderUtilityTable(rows) {
+  let html = "<table><thead><tr><th>Cell</th><th>Model</th><th>Protocol</th>"
+    + '<th class="num">Utility</th><th class="num">Recall</th>'
+    + "</tr></thead><tbody>";
+  for (const r of rows) {
+    html += "<tr><td>" + esc(r.label) + (r.label === "none" ? " #" + r.repeat : "")
+      + "</td><td>" + esc(r.model) + "</td><td>"
+      + (r.warm ? "warmed" : "unwarmed") + '</td><td class="num">'
+      + r.utility.toFixed(3) + '</td><td class="num">'
+      + r.recall.toFixed(3) + "</td></tr>";
+  }
+  return html + "</tbody></table>";
+}
+
+fetch("/api/findings").then((r) => r.json()).then((f) => {
+  $("attacks").innerHTML = renderAttacks(f.attacks);
+  $("retrievers").innerHTML = renderRetrievers(f.retrievers);
+  $("utility").innerHTML = renderUtility(f.utility);
+  $("utility-table").innerHTML = renderUtilityTable(f.utility);
+  for (const dot of document.querySelectorAll(".dot")) {
+    dot.addEventListener("mousemove", (e) => showTip(e, dot.dataset.tip));
+    dot.addEventListener("mouseleave", hideTip);
+  }
+}).catch((e) => {
+  $("attacks").innerHTML = '<p class="missing">Could not load findings: '
+    + esc(e.message) + "</p>";
+});
+</script>
+</body>
+</html>

@@ -28,6 +28,7 @@ from threatrag import __version__, factory
 from threatrag.config import Config, load_config
 from threatrag.domain.models import Answer, Principal, RetrievedChunk
 from threatrag.domain.ports import Embedder, Generator, VectorStore
+from threatrag.eval import findings as findings_module
 from threatrag.rag.generators.ollama import GenerationError
 from threatrag.rag.pipeline import AnswerPipeline
 from threatrag.security.defenses import available as available_defenses
@@ -66,9 +67,7 @@ class Services:
     generator: Generator
     stores: dict[tuple[str, bool], VectorStore]
 
-    def pipeline_for(
-        self, defenses: Sequence[str], retrieval: str | None = None
-    ) -> AnswerPipeline:
+    def pipeline_for(self, defenses: Sequence[str], retrieval: str | None = None) -> AnswerPipeline:
         config = config_for(retrieval, defenses)
         # Keyed by both, because each names a different collection: the
         # retriever chooses which one holds the vectors, and segregation
@@ -320,6 +319,23 @@ def ask(body: AskRequest, services: ServicesDep, principal: PrincipalDep) -> Ans
         # 502: the backend failed, the request was fine. Distinguishable in the
         # UI from "no evidence", which is a successful answer with no content.
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/api/findings")
+def findings(services: ServicesDep) -> findings_module.Findings:
+    """What the experiments measured, read back from the committed dumps.
+
+    Deliberately touches no service. The console needs Qdrant and Ollama up to
+    show anything; this page has to work when they are down, so the one part
+    of the project someone is likely to be shown cannot be taken out by a
+    docker daemon that did not start.
+    """
+    return findings_module.load(services.config.paths.reports_dir / "data")
+
+
+@app.get("/findings")
+def findings_page() -> FileResponse:
+    return FileResponse(STATIC_DIR / "findings.html")
 
 
 @app.get("/")
