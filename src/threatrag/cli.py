@@ -924,7 +924,10 @@ def benchmark(
         typer.Option(
             "--warm",
             help="Generate each question twice and keep the second answer. Costs about "
-            "75% more time; rows are not comparable with unwarmed ones.",
+            "75% more time; rows are not comparable with unwarmed ones. Stabilises "
+            "cells against others in the SAME process (2-5 of 200 answers differ, "
+            "against 57 unwarmed); it does NOT stabilise them across processes "
+            "(13-31 of 200), so compare a cell only with cells run beside it.",
         ),
     ] = False,
 ) -> None:
@@ -1008,7 +1011,11 @@ def benchmark(
             # preceded it; a second one's cache holds this prompt's own prefix
             # and no longer does. Measured 2026-09-17: two identical repeats
             # differ on 57 of 200 answers generated once each, and on 1 of 200
-            # when each is generated twice and the second kept.
+            # when each is generated twice and the second kept. Measured
+            # 2026-09-19: that holds only for cells sharing a process. Cells in
+            # different processes still differ on 13 to 31 of 200, so this flag
+            # narrows a comparison, it does not make a cell absolutely
+            # reproducible.
             if warm:
                 p.answer(question, principal=who)
             return p.answer(question, principal=who)

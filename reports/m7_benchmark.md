@@ -519,6 +519,16 @@ Evidence, weaker attacker: `reports/data/m7_reidentify_public.json`,
   is generated twice and the second kept** (`--warm`), with on-target flips
   going from 2 to 0. Two earlier suspects were ruled out on the way: the model
   never reloaded between those cells, and no layers were on the CPU.
+  **`--warm`'s guarantee is within-process only, measured 2026-09-19.** That
+  1 of 200 was two cells in one process. Across five warmed undefended repeats
+  under a byte-identical load, cells in the same process differ on 2 to 5
+  answers of 200, but cells in *different* processes differ on 13 to 31, and
+  the first cell of a process differs from later cells of it on 18 to 22. The
+  warmed baseline therefore spans 0.175-0.185, the same width as the unwarmed
+  one. **Cell position is a confound on this metric**: `source_cap` reads a
+  hit delta of -0.010 to -0.015 against mid-process repeats and -0.005 against
+  an undefended control run in its own position. Any cell compared here should
+  be paired with an untreated cell at the same position.
   **Every utility number in this report was measured under the unwarmed
   protocol**, so its run-to-run noise is real and none of it is restated here.
   Evidence: `reports/data/repro_check.jsonl` and `repro_check_warm.jsonl`.
