@@ -231,12 +231,42 @@ def build_pipeline(config: Config, embedder_name: str | None = None) -> IngestPi
 
 
 def build_answer_pipeline(config: Config, embedder_name: str | None = None) -> AnswerPipeline:
+    return compose_answer_pipeline(
+        config,
+        embedder=build_embedder(config, embedder_name),
+        store=build_store(config),
+        generator=build_generator(config),
+    )
+
+
+def compose_answer_pipeline(
+    config: Config, *, embedder: Embedder, store: VectorStore, generator: Generator
+) -> AnswerPipeline:
+    """Wire a pipeline from parts the caller already holds.
+
+    Split out of :func:`build_answer_pipeline` for callers that vary the
+    defence set while the expensive parts stay fixed -- the API serves a
+    different defence set per request, and rebuilding the pipeline the usual
+    way would reload the embedding model from disk on every call.
+
+    Only the defences and the cheap wiring differ per set. The store is a
+    parameter rather than derived here because ``corpus_segregation`` changes
+    which store is correct, so a caller reusing one across defence sets has to
+    pick the matching one itself.
+    """
     # The same defence objects run at every hook they implement, so a defence
     # that spans retrieval and the answer sees one consistent view of a request.
     defenses = build_defenses(config)
     return AnswerPipeline(
-        retriever=build_retriever(config, embedder_name, defenses=defenses),
-        generator=build_generator(config),
+        retriever=Retriever(
+            embedder=embedder,
+            store=store,
+            top_k=config.retrieval.top_k,
+            score_threshold=config.retrieval.score_threshold,
+            overfetch=config.retrieval.overfetch,
+            defenses=defenses,
+        ),
+        generator=generator,
         max_context_chars=config.generation.max_context_chars,
         defenses=defenses,
     )
